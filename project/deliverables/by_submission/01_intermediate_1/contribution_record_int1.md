@@ -35,21 +35,21 @@ alone, and explains one test of the other person's interface.
 Evidence to bring: the IDM equation in `idm_acceleration` (terms with T and a_max); speed-drop ratio 0.66;
 the linear stability result in `experiment_record.md` (unstable below about 72 km/h for T = 1.0 s).
 
-- Seunghun:
+- Seunghun: I think the key part of IDM is how a car responds when the gap to the car ahead shrinks. In our runs, stronger braking by the lead car caused a larger speed drop farther back in the platoon: the speed-drop ratio rose from 0.66 with a −2.5 m/s² brake to 0.73 with a −3.5 m/s² brake. Both ratios are below 1, though, so the disturbance still faded as it moved through the platoon.
 - Rocair:
 
 **2. Why is the selected time step appropriate, and what failure would make you reduce it?**
 Evidence to bring: `P8_timestep` in `outputs/int1/int1_results.json` (0.05 / 0.1 / 0.2 s).
 
-- Seunghun:
+- Seunghun: A 0.1 s time step seems fine for this setup. When I reduced it to 0.05 s, the speed-drop ratio changed by 0.4% and total delay by 1.4%. I would use a smaller step if cars started overlapping, their motion showed sudden numerical jumps, or halving the step changed the results substantially.
 - Rocair:
 
 **3. Pick one parameter: why is its value plausible, what source supports it, and how would a larger value change the result?**
 Evidence to bring: the source table in `design_record_int1.md`; for T, the zone capacity of 1,743 veh/h
 with T = 1.6 s versus 2,519 veh/h with T = 1.0 s.
 
-- Seunghun:
-- Rocair:
+- Seunghun: I used T = 1.0 s, based on the freeway-car values in Table 11.2 of Treiber and Kesting (2013). At 100 km/h, the vT part of the desired gap is about 28 m, which gives me a sense of what that setting means in practice. Increasing T means cars leave more space. The IDM capacity formula gives 2,519 veh/h at T = 1.0 s but only 1,743 veh/h at T = 1.6 s. That lower capacity is why the 1.6 s zone acts as a bottleneck: under the same demand, the queue starts earlier and grows longer.
+- Rocair: 
 
 ## Changes made in response to feedback
 
