@@ -20,7 +20,14 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from cavsim.core import FreewaySimulation
 
 
+def all_scenarios(config: dict) -> list[dict]:
+    """The Intermediate 1 scenario (if defined) followed by the final-pathway experiments."""
+    return ([config["int1_scenario"]] if "int1_scenario" in config else []) + list(config["experiments"])
+
+
 def scenario_label(scenario: dict) -> str:
+    if "label" in scenario:
+        return scenario["label"]
     controller = scenario["controller"].upper()
     penetration = int(round(100 * float(scenario["penetration"])))
     demand = "High demand" if scenario["demand"] == "high" else "Nominal demand"
@@ -35,8 +42,8 @@ def scenario_label(scenario: dict) -> str:
 class SimulationSession:
     def __init__(self, config: dict):
         self.config = config
-        self.scenarios = {item["scenario_id"]: item for item in config["experiments"]}
-        self.scenario_id = "nominal_cacc_50"
+        self.scenarios = {item["scenario_id"]: item for item in all_scenarios(config)}
+        self.scenario_id = config["int1_scenario"]["scenario_id"] if "int1_scenario" in config else "nominal_cacc_50"
         self.speed = 1.0
         self.playing = False
         self.last_wall_s = time.monotonic()
@@ -45,12 +52,16 @@ class SimulationSession:
         self.sim = self._new_sim(self.scenario_id)
 
     def _new_sim(self, scenario_id: str) -> FreewaySimulation:
+        scenario = dict(self.scenarios[scenario_id])
+        meter_cfg = dict(self.config["ramp_meter"])
+        if "meter_mode" in scenario:
+            meter_cfg["mode"] = scenario["meter_mode"]
         return FreewaySimulation(
             dict(self.config["simulation"]),
             self.config["human_idm"],
             self.config["automated_controller"],
-            self.config["ramp_meter"],
-            dict(self.scenarios[scenario_id]),
+            meter_cfg,
+            scenario,
         )
 
     def reset(self, scenario_id: str | None = None) -> None:
@@ -151,7 +162,7 @@ class AppHandler(SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         if self.path == "/api/config":
             scenarios = []
-            for item in self.session.config["experiments"]:
+            for item in all_scenarios(self.session.config):
                 record = dict(item)
                 record["label"] = scenario_label(item)
                 scenarios.append(record)

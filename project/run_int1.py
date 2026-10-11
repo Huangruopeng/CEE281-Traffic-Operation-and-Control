@@ -28,8 +28,8 @@ OUT = ROOT / "outputs" / "int1"
 
 def run_case(config: dict, dt: float) -> tuple[dict, dict]:
     sim_cfg = dict(config["simulation"], dt_s=dt, control_update_s=max(dt, 0.1), log_all_vehicles=True)
-    meter_cfg = dict(config["ramp_meter"], mode="unmetered")
-    scenario = next(x for x in config["experiments"] if x["scenario_id"] == "nominal_human")
+    scenario = config["int1_scenario"]          # human drivers only, ramp meter off
+    meter_cfg = dict(config["ramp_meter"], mode=scenario["meter_mode"])
     sim = FreewaySimulation(sim_cfg, config["human_idm"], config["automated_controller"], meter_cfg, scenario)
     metric = sim.run()
     tables = sim.tables()

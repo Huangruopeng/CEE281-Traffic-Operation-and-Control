@@ -4,6 +4,23 @@ This repository is a complete, reproducible individual-project package for the F
 
 **New to traffic engineering?** Start with [`START_HERE.md`](START_HERE.md), then read the project-specific primer in [`deliverables/traffic_engineering_primer.md`](deliverables/traffic_engineering_primer.md). The exact files required at Intermediate 1, 2, 3, and Final are organized under [`deliverables/by_submission/`](deliverables/by_submission/README.md).
 
+## Intermediate 1 (current submission)
+
+```bash
+bash run_int1.sh
+```
+
+Runs the unit tests, then the minimum case in `run_int1.py`: human drivers only, ramp meter off, one
+bottleneck (time gap T = 1.6 s at 1,600-1,900 m), one braking disturbance. The result is deterministic:
+speed-drop ratio 0.66, queue starting at 1,621 m, 24 vehicles stored, 0 unfinished vehicles, 0 overlaps.
+Outputs go to `outputs/int1/`. Records: `deliverables/by_submission/01_intermediate_1/` (design record,
+experiment record with pre-run predictions, contribution record). Live view: `python run_live.py`, then open
+<http://127.0.0.1:8765>; the "Intermediate 1" scenario opens by default.
+
+Note: for Intermediate 1 the human-driver parameters, the bottleneck and the merge rule were changed (see
+the design record). The final-pathway results described further below were produced with the earlier
+baseline and will be regenerated.
+
 ## One-command reproduction
 
 From this directory:

@@ -106,6 +106,30 @@ function drawRoad() {
   const mapX = (x) => left + ((x - viewStartM) / viewSpanM) * (right - left);
   $("viewStartLabel").textContent = `MERGE DETAIL · x = ${Math.round(viewStartM)} m`;
   $("viewEndLabel").textContent = `x = ${Math.round(viewEndM)} m · FIXED VEHICLE SCALE`;
+
+  // Whole-road overview strip: every vehicle as a dot colored by speed (red = stopped, green = v0),
+  // the bottleneck zone, the merge, the detectors, and a box marking the merge-detail window below.
+  const ovY = 48, ovX = (x) => left + (x / road.length_m) * (right - left);
+  ctx.fillStyle = "rgba(240,183,99,.18)";
+  ctx.fillRect(ovX(road.bottleneck_start_m), ovY - 7, ovX(road.bottleneck_end_m) - ovX(road.bottleneck_start_m), 14);
+  ctx.strokeStyle = "rgba(215,227,232,.35)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(left, ovY); ctx.lineTo(right, ovY); ctx.stroke();
+  ctx.strokeStyle = "rgba(240,183,99,.8)";
+  ctx.beginPath(); ctx.moveTo(ovX(road.ramp_position_m), ovY + 3); ctx.lineTo(ovX(road.ramp_position_m), ovY + 10); ctx.stroke();
+  for (const detector of state.detectors) {
+    ctx.strokeStyle = "rgba(84,214,218,.8)";
+    ctx.beginPath(); ctx.moveTo(ovX(detector.position_m), ovY - 9); ctx.lineTo(ovX(detector.position_m), ovY - 4); ctx.stroke();
+  }
+  for (const vehicle of state.vehicles) {
+    const hue = Math.round(120 * Math.min(vehicle.speed_mps / 33.33, 1));
+    ctx.fillStyle = `hsl(${hue}, 75%, 55%)`;
+    ctx.fillRect(ovX(vehicle.x_m) - 1, ovY - 2, 2, 4);
+  }
+  ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.setLineDash([2, 2]);
+  ctx.strokeRect(ovX(viewStartM), ovY - 10, ovX(viewEndM) - ovX(viewStartM), 20); ctx.setLineDash([]);
+  ctx.fillStyle = "rgba(174,191,200,.6)"; ctx.font = "8px ui-monospace, monospace"; ctx.textAlign = "left";
+  ctx.fillText(`WHOLE ROAD 0-${road.length_m / 1000} km · dashed box = detail view below · amber = bottleneck · tick = ramp`, left, ovY - 14);
+
   const bottleStart = mapX(road.bottleneck_start_m), bottleEnd = mapX(road.bottleneck_end_m);
 
   if (road.bottleneck_end_m >= viewStartM && road.bottleneck_start_m <= viewEndM) {
