@@ -1,0 +1,45 @@
+{
+  "dt_0.1": {
+    "P1_amplification_ratio": 0.6577044440297617,
+    "P2_first_congestion_x_m": 1620.9021361892997,
+    "P2_first_congestion_t_s": 188.0,
+    "P3_D1_below_40kmh_at_s": 330.0,
+    "P3_D2_min_speed_kmh": 85.5659600233392,
+    "P4_queue_mean_speed_kmh_300_600s": 27.08280667305576,
+    "P4_queue_min_speed_kmh_300_600s": 15.124470370132068,
+    "P5_max_vehicles_queued_upstream": 24,
+    "P5_queue_tail_min_x_m": 1318.124650437543,
+    "P5_max_ramp_queue_veh": 32,
+    "P5_ramp_overflow_veh": 0,
+    "P6_last_congested_t_s": 794.0,
+    "P6_unfinished_vehicles": 0,
+    "P7_conservation_ok": true,
+    "P7_overlap_steps": 0,
+    "P7_minimum_gap_m": 5.7141581549271905,
+    "P7_hardest_braking_mps2": -3.4336500195165494,
+    "total_delay_veh_h": 6.581474288796034
+  },
+  "P8_timestep": {
+    "0.05": {
+      "P1_amplification_ratio": 0.6549695391799364,
+      "total_delay_veh_h": 6.490633297889468,
+      "P3_D1_below_40kmh_at_s": 330.0,
+      "P7_overlap_steps": 0,
+      "P7_minimum_gap_m": 5.714067395638494
+    },
+    "0.1": {
+      "P1_amplification_ratio": 0.6577044440297617,
+      "total_delay_veh_h": 6.581474288796034,
+      "P3_D1_below_40kmh_at_s": 330.0,
+      "P7_overlap_steps": 0,
+      "P7_minimum_gap_m": 5.7141581549271905
+    },
+    "0.2": {
+      "P1_amplification_ratio": 0.6639412217458905,
+      "total_delay_veh_h": 6.766065069038928,
+      "P3_D1_below_40kmh_at_s": 300.0,
+      "P7_overlap_steps": 0,
+      "P7_minimum_gap_m": 5.7381714496762015
+    }
+  }
+}

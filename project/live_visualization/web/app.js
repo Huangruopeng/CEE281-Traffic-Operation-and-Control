@@ -114,7 +114,7 @@ function drawRoad() {
     ctx.strokeStyle = "rgba(240,183,99,.25)"; ctx.setLineDash([4, 5]);
     ctx.strokeRect(clippedStart, roadY - 73, clippedEnd - clippedStart, 146); ctx.setLineDash([]);
     ctx.fillStyle = "rgba(240,183,99,.55)"; ctx.font = "9px ui-monospace, monospace";
-    ctx.fillText("18 m/s BOTTLENECK", clippedStart + 8, roadY - 57);
+    ctx.fillText(`BOTTLENECK · T = ${road.bottleneck_time_gap_s ?? "?"} s`, clippedStart + 8, roadY - 57);
   }
 
   const rampMerge = mapX(road.ramp_position_m);

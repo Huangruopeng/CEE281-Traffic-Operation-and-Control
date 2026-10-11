@@ -41,7 +41,9 @@ class ProjectChecks(unittest.TestCase):
         tables = sim.tables()
         accounted = metric["exited_vehicles"] + metric["unfinished_vehicles"]
         self.assertEqual(metric["generated_vehicles"], accounted)
-        self.assertGreaterEqual(metric["minimum_gap_m"], sim_cfg["minimum_physical_gap_m"] - 1e-9)
+        # Human drivers are pure IDM (no position guard), so check that no vehicles overlap.
+        self.assertEqual(metric["overlap_steps"], 0)
+        self.assertGreater(metric["minimum_gap_m"], 0.0)
         audit = audit_detector_counts(tables["observations"], tables["crossings"], sample_intervals=3)
         self.assertTrue((audit["count_error_veh"] == 0).all())
 
