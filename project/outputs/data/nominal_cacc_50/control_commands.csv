@@ -1,0 +1,31 @@
+issue_time_s,apply_time_s,actuator_id,action,value,units,lower_bound,upper_bound,fallback_active,reason,queue_estimate_veh
+0.0,0.0,ramp_meter_R1,release_rate,480.0,veh/h,240.0,900.0,True,missing observation: fixed-rate fallback,0
+30.0,30.0,ramp_meter_R1,release_rate,900.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,0
+60.0,60.0,ramp_meter_R1,release_rate,900.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,2
+90.0,90.0,ramp_meter_R1,release_rate,819.3333333333334,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,1
+120.0,120.0,ramp_meter_R1,release_rate,603.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,0
+150.0,150.0,ramp_meter_R1,release_rate,460.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,1
+180.0,180.0,ramp_meter_R1,release_rate,302.3333333333333,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,1
+210.0,210.0,ramp_meter_R1,release_rate,295.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,2
+240.0,240.0,ramp_meter_R1,release_rate,250.99999999999994,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,2
+270.0,270.0,ramp_meter_R1,release_rate,250.99999999999994,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,3
+300.0,300.0,ramp_meter_R1,release_rate,362.83333333333326,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,4
+330.0,330.0,ramp_meter_R1,release_rate,463.66666666666663,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,5
+360.0,360.0,ramp_meter_R1,release_rate,503.9999999999999,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,5
+390.0,390.0,ramp_meter_R1,release_rate,538.8333333333331,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,5
+420.0,420.0,ramp_meter_R1,release_rate,569.9999999999998,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,4
+450.0,450.0,ramp_meter_R1,release_rate,514.9999999999998,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,4
+480.0,480.0,ramp_meter_R1,release_rate,386.6666666666664,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,4
+510.0,510.0,ramp_meter_R1,release_rate,349.9999999999998,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,4
+540.0,540.0,ramp_meter_R1,release_rate,349.9999999999998,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,4
+570.0,570.0,ramp_meter_R1,release_rate,340.83333333333314,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,5
+600.0,600.0,ramp_meter_R1,release_rate,421.49999999999983,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,5
+630.0,630.0,ramp_meter_R1,release_rate,487.4999999999998,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,2
+660.0,660.0,ramp_meter_R1,release_rate,599.3333333333331,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,0
+690.0,690.0,ramp_meter_R1,release_rate,900.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,0
+720.0,720.0,ramp_meter_R1,release_rate,900.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,0
+750.0,750.0,ramp_meter_R1,release_rate,900.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,0
+780.0,780.0,ramp_meter_R1,release_rate,900.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,0
+810.0,810.0,ramp_meter_R1,release_rate,900.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,0
+840.0,840.0,ramp_meter_R1,release_rate,900.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,0
+870.0,870.0,ramp_meter_R1,release_rate,900.0,veh/h,240.0,900.0,False,ALINEA-like occupancy feedback,0
