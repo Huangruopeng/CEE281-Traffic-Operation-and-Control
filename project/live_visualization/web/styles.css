@@ -102,7 +102,13 @@ select:focus { border-color: rgba(84,214,218,.65); box-shadow: 0 0 0 3px rgba(84
 .legend .brake { background: transparent; border: 1px solid var(--coral); box-shadow: 0 0 6px rgba(255,117,111,.7); }
 
 .canvas-wrap { height: clamp(310px, 38vw, 500px); position: relative; overflow: hidden; background: #081118; }
-#roadCanvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+#roadCanvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+#roadCanvas.is-panning { cursor: grabbing; }
+.camera-controls { position: absolute; z-index: 2; top: 68px; right: 14px; display: flex; border: 1px solid rgba(159,184,199,.2); border-radius: 4px; overflow: hidden; background: rgba(7,16,23,.86); box-shadow: 0 6px 18px rgba(0,0,0,.24); }
+.camera-controls button { height: 28px; min-width: 58px; padding: 0 9px; border: 0; border-right: 1px solid rgba(159,184,199,.17); background: transparent; color: #9eb1bc; font: 700 9px ui-monospace, monospace; letter-spacing: .06em; }
+.camera-controls button:last-child { border-right: 0; }
+.camera-controls button:hover:not(:disabled), .camera-controls button:focus-visible { color: var(--cyan); background: rgba(84,214,218,.09); outline: none; }
+.camera-controls button:disabled { color: #425460; cursor: default; }
 .canvas-badge { position: absolute; bottom: 11px; color: rgba(176,194,204,.52); font: 9px ui-monospace, monospace; letter-spacing: .08em; pointer-events: none; }
 .canvas-badge.left { left: 15px; }
 .canvas-badge.right { right: 15px; }
@@ -196,6 +202,8 @@ kbd { border: 1px solid var(--line); border-bottom-color: rgba(159,184,199,.3); 
   .sidebar { grid-template-columns: 1fr; }
   .legend { display: none; }
   .canvas-wrap { height: 340px; }
+  .camera-controls { top: 66px; right: 10px; }
+  .camera-controls button { min-width: 50px; padding: 0 7px; }
   .timeline-row { grid-template-columns: 45px 1fr 40px; }
   .live-btn { display: none; }
 }

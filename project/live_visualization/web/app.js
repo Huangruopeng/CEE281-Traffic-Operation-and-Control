@@ -6,6 +6,7 @@ const els = {
   playLabel: $("playLabel"), reset: $("resetBtn"), step: $("stepBtn"), record: $("recordBtn"),
   timeline: $("timeline"), timelineCurrent: $("timelineCurrent"), timelineEnd: $("timelineEnd"), live: $("liveBtn"),
   road: $("roadCanvas"), speedChart: $("speedChart"), queueChart: $("queueChart"), tip: $("hoverTip"),
+  panLeft: $("panLeftBtn"), panRight: $("panRightBtn"), centerMerge: $("centerMergeBtn"),
   simClock: $("simClock"), connection: $("connectionStatus"), liveDot: $("liveDot"), toast: $("toast"),
 };
 
@@ -20,6 +21,9 @@ let timelineDragging = false;
 let recorder = null;
 let recordedChunks = [];
 let toastTimer = null;
+let cameraCenterM = null;
+let cameraDrag = null;
+let suppressRoadClick = false;
 
 const colors = { human: "#98a8b3", acc: "#f0b763", cacc: "#54d6da", coral: "#ff756f", grid: "rgba(137,164,179,.10)" };
 
@@ -82,6 +86,45 @@ function roundedRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
+function defaultCameraCenter(road) {
+  return road.ramp_position_m + 130;
+}
+
+function cameraGeometry(width, road) {
+  const left = 34;
+  const right = width - 34;
+  const viewSpanM = Math.min(650, Math.max(140, (right - left) / 1.55));
+  const fallbackCenter = defaultCameraCenter(road);
+  const requestedCenter = cameraCenterM === null ? fallbackCenter : cameraCenterM;
+  const minCenter = Math.min(viewSpanM / 2, road.length_m / 2);
+  const maxCenter = Math.max(minCenter, road.length_m - viewSpanM / 2);
+  const viewCenterM = Math.max(minCenter, Math.min(maxCenter, requestedCenter));
+  const viewStartM = Math.max(0, viewCenterM - viewSpanM / 2);
+  const viewEndM = Math.min(road.length_m, viewStartM + viewSpanM);
+  cameraCenterM = viewCenterM;
+  return { left, right, viewSpanM, viewStartM, viewEndM, viewCenterM, pixelsPerMeter: (right - left) / viewSpanM };
+}
+
+function moveCamera(deltaM) {
+  if (!state) return;
+  const width = els.road.getBoundingClientRect().width;
+  const geometry = cameraGeometry(width, state.road);
+  cameraCenterM = geometry.viewCenterM + deltaM;
+  drawRoad();
+}
+
+function panCamera(direction) {
+  if (!state) return;
+  const geometry = cameraGeometry(els.road.getBoundingClientRect().width, state.road);
+  moveCamera(direction * geometry.viewSpanM * .75);
+}
+
+function centerCameraOnMerge() {
+  if (!state) return;
+  cameraCenterM = defaultCameraCenter(state.road);
+  drawRoad();
+}
+
 function drawRoad() {
   const { ctx, width: w, height: h } = resizeCanvas(els.road);
   ctx.clearRect(0, 0, w, h);
@@ -98,14 +141,13 @@ function drawRoad() {
   if (!state) return;
 
   const road = state.road;
-  const left = 34, right = w - 34, roadY = h * .47;
-  const viewSpanM = Math.min(650, Math.max(140, (right - left) / 1.55));
-  const viewCenterM = road.ramp_position_m + 130;
-  const viewStartM = Math.max(0, Math.min(road.length_m - viewSpanM, viewCenterM - viewSpanM / 2));
-  const viewEndM = viewStartM + viewSpanM;
+  const roadY = h * .47;
+  const { left, right, viewSpanM, viewStartM, viewEndM } = cameraGeometry(w, road);
   const mapX = (x) => left + ((x - viewStartM) / viewSpanM) * (right - left);
-  $("viewStartLabel").textContent = `MERGE DETAIL · x = ${Math.round(viewStartM)} m`;
+  $("viewStartLabel").textContent = `DRAG TO PAN · x = ${Math.round(viewStartM)} m`;
   $("viewEndLabel").textContent = `x = ${Math.round(viewEndM)} m · FIXED VEHICLE SCALE`;
+  els.panLeft.disabled = viewStartM <= .01;
+  els.panRight.disabled = viewEndM >= road.length_m - .01;
 
   // Whole-road overview strip: every vehicle as a dot colored by speed (red = stopped, green = v0),
   // the bottleneck zone, the merge, the detectors, and a box marking the merge-detail window below.
@@ -165,12 +207,14 @@ function drawRoad() {
     ctx.beginPath(); ctx.moveTo(rampCurve.p0.x, rampCurve.p0.y);
     ctx.bezierCurveTo(rampCurve.p1.x, rampCurve.p1.y, rampCurve.p2.x, rampCurve.p2.y, rampCurve.p3.x, rampCurve.p3.y);
   };
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "#1b2a34"; ctx.lineWidth = 42; traceRamp(); ctx.stroke();
-  ctx.strokeStyle = "rgba(200,216,224,.28)"; ctx.lineWidth = 1; ctx.setLineDash([8, 9]); traceRamp(); ctx.stroke(); ctx.setLineDash([]);
-  ctx.fillStyle = "rgba(174,191,200,.48)"; ctx.font = "8px ui-monospace, monospace"; ctx.textAlign = "left";
-  ctx.fillText("ON-RAMP", rampCurve.p0.x + 3, rampCurve.p0.y + 31);
-
+  const rampVisible = road.ramp_position_m + 50 >= viewStartM && road.ramp_position_m - 250 <= viewEndM;
+  if (rampVisible) {
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#1b2a34"; ctx.lineWidth = 42; traceRamp(); ctx.stroke();
+    ctx.strokeStyle = "rgba(200,216,224,.28)"; ctx.lineWidth = 1; ctx.setLineDash([8, 9]); traceRamp(); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(174,191,200,.48)"; ctx.font = "8px ui-monospace, monospace"; ctx.textAlign = "left";
+    ctx.fillText("ON-RAMP", rampCurve.p0.x + 3, rampCurve.p0.y + 31);
+  }
   ctx.strokeStyle = "#1c2d38"; ctx.lineWidth = 64; ctx.beginPath(); ctx.moveTo(left, roadY); ctx.lineTo(right, roadY); ctx.stroke();
   ctx.strokeStyle = "rgba(215,227,232,.32)"; ctx.lineWidth = 1; ctx.setLineDash([12, 12]); ctx.beginPath(); ctx.moveTo(left, roadY); ctx.lineTo(right, roadY); ctx.stroke(); ctx.setLineDash([]);
   ctx.strokeStyle = "rgba(215,227,232,.23)"; ctx.beginPath(); ctx.moveTo(left, roadY - 31); ctx.lineTo(right, roadY - 31); ctx.moveTo(left, roadY + 31); ctx.lineTo(right, roadY + 31); ctx.stroke();
@@ -185,27 +229,29 @@ function drawRoad() {
     ctx.fillText(detector.sensor_id, x, roadY - 55);
   }
 
-  const meterPoint = cubicPoint(rampCurve, .56);
-  const meterX = meterPoint.x, meterY = meterPoint.y;
-  ctx.fillStyle = "#8a7ce3"; ctx.fillRect(meterX, meterY - 18, 2, 20);
-  ctx.beginPath(); ctx.arc(meterX + 1, meterY - 19, 4, 0, Math.PI * 2);
-  ctx.fillStyle = state.queues.ramp ? "#ff756f" : "#54d6da"; ctx.fill();
-  ctx.textAlign = "left"; ctx.fillStyle = "rgba(174,191,200,.65)"; ctx.font = "8px ui-monospace, monospace"; ctx.fillText("R1 METER", meterX + 8, meterY - 16);
+  if (rampVisible) {
+    const meterPoint = cubicPoint(rampCurve, .56);
+    const meterX = meterPoint.x, meterY = meterPoint.y;
+    ctx.fillStyle = "#8a7ce3"; ctx.fillRect(meterX, meterY - 18, 2, 20);
+    ctx.beginPath(); ctx.arc(meterX + 1, meterY - 19, 4, 0, Math.PI * 2);
+    ctx.fillStyle = state.queues.ramp ? "#ff756f" : "#54d6da"; ctx.fill();
+    ctx.textAlign = "left"; ctx.fillStyle = "rgba(174,191,200,.65)"; ctx.font = "8px ui-monospace, monospace"; ctx.fillText("R1 METER", meterX + 8, meterY - 16);
 
-  ctx.strokeStyle = "rgba(240,183,99,.45)"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(rampMerge - 8, roadY + 22); ctx.lineTo(rampMerge + 12, roadY + 8); ctx.stroke();
-  ctx.fillStyle = "rgba(240,183,99,.62)"; ctx.font = "8px ui-monospace, monospace"; ctx.fillText("MERGE", rampMerge + 17, roadY + 24);
+    ctx.strokeStyle = "rgba(240,183,99,.45)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(rampMerge - 8, roadY + 22); ctx.lineTo(rampMerge + 12, roadY + 8); ctx.stroke();
+    ctx.fillStyle = "rgba(240,183,99,.62)"; ctx.font = "8px ui-monospace, monospace"; ctx.fillText("MERGE", rampMerge + 17, roadY + 24);
 
-  const queueShown = Math.min(state.queues.ramp, 10);
-  for (let i = 0; i < queueShown; i++) {
-    const p = Math.max(.04, .49 - i * .045);
-    const point = cubicPoint(rampCurve, p);
-    ctx.save(); ctx.translate(point.x, point.y); ctx.rotate(cubicAngle(rampCurve, p));
-    ctx.fillStyle = "#9e8cff"; roundedRect(ctx, -3.5, -2.5, 7, 5, 2); ctx.fill(); ctx.restore();
-  }
-  if (state.queues.ramp > queueShown) {
-    ctx.fillStyle = "rgba(194,183,255,.75)"; ctx.font = "8px ui-monospace, monospace";
-    ctx.fillText(`+${state.queues.ramp - queueShown}`, rampCurve.p0.x - 2, rampCurve.p0.y - 11);
+    const queueShown = Math.min(state.queues.ramp, 10);
+    for (let i = 0; i < queueShown; i++) {
+      const p = Math.max(.04, .49 - i * .045);
+      const point = cubicPoint(rampCurve, p);
+      ctx.save(); ctx.translate(point.x, point.y); ctx.rotate(cubicAngle(rampCurve, p));
+      ctx.fillStyle = "#9e8cff"; roundedRect(ctx, -3.5, -2.5, 7, 5, 2); ctx.fill(); ctx.restore();
+    }
+    if (state.queues.ramp > queueShown) {
+      ctx.fillStyle = "rgba(194,183,255,.75)"; ctx.font = "8px ui-monospace, monospace";
+      ctx.fillText(`+${state.queues.ramp - queueShown}`, rampCurve.p0.x - 2, rampCurve.p0.y - 11);
+    }
   }
 
   const sorted = [...state.vehicles].sort((a, b) => a.x_m - b.x_m);
@@ -416,13 +462,51 @@ function hitTest(point) {
 }
 
 els.road.addEventListener("mousemove", (event) => {
+  if (cameraDrag?.moved) { els.tip.hidden = true; return; }
   const point = pointerPosition(event); const hit = hitTest(point);
   if (!hit) { els.tip.hidden = true; return; }
   els.tip.hidden = false; els.tip.style.left = `${point.x}px`; els.tip.style.top = `${point.y}px`;
   els.tip.textContent = `${hit.vehicle.vehicle_id} · ${hit.vehicle.controller.toUpperCase()} · ${fmt(hit.vehicle.speed_mps * 3.6, 1)} km/h`;
 });
 els.road.addEventListener("mouseleave", () => { els.tip.hidden = true; });
-els.road.addEventListener("click", (event) => { const hit = hitTest(pointerPosition(event)); if (hit) { selectedVehicleId = hit.vehicle.vehicle_id; updateInspector(); drawRoad(); } });
+els.road.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0 || !state) return;
+  const geometry = cameraGeometry(els.road.getBoundingClientRect().width, state.road);
+  cameraDrag = { pointerId: event.pointerId, startX: event.clientX, startCenterM: geometry.viewCenterM, pixelsPerMeter: geometry.pixelsPerMeter, moved: false };
+  els.road.setPointerCapture(event.pointerId);
+});
+els.road.addEventListener("pointermove", (event) => {
+  if (!cameraDrag || cameraDrag.pointerId !== event.pointerId) return;
+  const dx = event.clientX - cameraDrag.startX;
+  if (Math.abs(dx) >= 4) cameraDrag.moved = true;
+  if (!cameraDrag.moved) return;
+  cameraCenterM = cameraDrag.startCenterM - dx / cameraDrag.pixelsPerMeter;
+  els.road.classList.add("is-panning");
+  els.tip.hidden = true;
+  drawRoad();
+});
+function endCameraDrag(event) {
+  if (!cameraDrag || cameraDrag.pointerId !== event.pointerId) return;
+  const moved = cameraDrag.moved;
+  cameraDrag = null;
+  els.road.classList.remove("is-panning");
+  if (els.road.hasPointerCapture(event.pointerId)) els.road.releasePointerCapture(event.pointerId);
+  if (moved) {
+    suppressRoadClick = true;
+    setTimeout(() => { suppressRoadClick = false; }, 0);
+  }
+}
+els.road.addEventListener("pointerup", endCameraDrag);
+els.road.addEventListener("pointercancel", endCameraDrag);
+els.road.addEventListener("click", (event) => {
+  if (suppressRoadClick) return;
+  const hit = hitTest(pointerPosition(event));
+  if (hit) { selectedVehicleId = hit.vehicle.vehicle_id; updateInspector(); drawRoad(); }
+});
+
+els.panLeft.addEventListener("click", () => panCamera(-1));
+els.panRight.addEventListener("click", () => panCamera(1));
+els.centerMerge.addEventListener("click", centerCameraOnMerge);
 
 els.play.addEventListener("click", () => sendControl(state?.session.playing ? "pause" : "play"));
 els.reset.addEventListener("click", () => { history = []; selectedVehicleId = null; sendControl("reset", { scenario_id: els.scenario.value }); });
@@ -455,6 +539,9 @@ window.addEventListener("keydown", (event) => {
   if (["SELECT", "INPUT"].includes(document.activeElement.tagName)) return;
   if (event.code === "Space") { event.preventDefault(); els.play.click(); }
   if (event.key.toLowerCase() === "r") els.reset.click();
+  if (event.shiftKey && event.key === "ArrowLeft") { event.preventDefault(); panCamera(-1); return; }
+  if (event.shiftKey && event.key === "ArrowRight") { event.preventDefault(); panCamera(1); return; }
+  if (event.key.toLowerCase() === "m") centerCameraOnMerge();
   if (event.key === "ArrowRight") els.step.click();
 });
 

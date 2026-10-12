@@ -66,6 +66,11 @@
             </div>
             <div class="canvas-wrap">
               <canvas id="roadCanvas" aria-label="Live freeway traffic animation"></canvas>
+              <div class="camera-controls" role="group" aria-label="Road camera controls">
+                <button id="panLeftBtn" type="button" title="Pan camera left (Shift + Left Arrow)" aria-label="Pan camera left">← PAN</button>
+                <button id="centerMergeBtn" type="button" title="Return camera to the merge (M)">MERGE</button>
+                <button id="panRightBtn" type="button" title="Pan camera right (Shift + Right Arrow)" aria-label="Pan camera right">PAN →</button>
+              </div>
               <div class="canvas-badge left" id="viewStartLabel">MERGE DETAIL</div>
               <div class="canvas-badge right" id="viewEndLabel">FIXED VEHICLE SCALE</div>
               <div id="hoverTip" class="hover-tip" hidden></div>
@@ -156,7 +161,7 @@
             <div class="disturbance-state" id="disturbanceState"><i></i><span>Disturbance has not started</span></div>
           </article>
 
-          <div class="shortcut-note"><kbd>Space</kbd> Play / pause <span>·</span> <kbd>R</kbd> Reset <span>·</span> <kbd>→</kbd> Single step</div>
+          <div class="shortcut-note"><kbd>Space</kbd> Play / pause <span>·</span> <kbd>R</kbd> Reset <span>·</span> <kbd>→</kbd> Single step <span>·</span> <kbd>Shift</kbd> + <kbd>←/→</kbd> Pan <span>·</span> <kbd>M</kbd> Merge view</div>
         </aside>
       </section>
     </main>

@@ -62,7 +62,7 @@
     "queue_override_vehicles": 25,
     "storage_vehicles": 35
   },
-  "int1_scenario": {"scenario_id": "int1_minimum", "label": "Intermediate 1 · human drivers only · ramp meter off", "controller": "human", "penetration": 0.0, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0, "meter_mode": "unmetered"},
+  "int1_scenario": {"scenario_id": "int1_minimum", "label": "Intermediate 1 · human drivers only · ramp meter control off", "controller": "human", "penetration": 0.0, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0, "meter_mode": "unmetered"},
   "experiments": [
     {"scenario_id": "nominal_human", "controller": "human", "penetration": 0.0, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0},
     {"scenario_id": "nominal_acc_50", "controller": "acc", "penetration": 0.5, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0},
