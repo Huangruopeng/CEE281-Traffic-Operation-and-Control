@@ -71,7 +71,7 @@ def prediction_checks(config: dict, metric: dict, tables: dict) -> dict:
     }
 
 
-def plot_evidence(config: dict, tables: dict, checks: dict) -> None:
+def plot_evidence(config: dict, tables: dict, checks: dict, cohort_ids: list[str]) -> None:
     s = config["simulation"]
     traj, obs, queues = tables["trajectories"], tables["observations"], tables["queues"]
 
@@ -99,15 +99,23 @@ def plot_evidence(config: dict, tables: dict, checks: dict) -> None:
     a2.set(xlabel="time [min]", ylabel="vehicles [veh]"); a2.legend(fontsize=8)
     fig.tight_layout(); fig.savefig(OUT / "detectors_and_ramp_queue.png", dpi=150); plt.close(fig)
 
-    cohort = traj[traj.is_disturbance_cohort & (traj.time_s >= 5) & (traj.time_s <= 30)]
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    for vid, g in cohort.groupby("vehicle_id"):
-        ax.plot(g.time_s, g.speed_mps * 3.6, lw=1)
-    ax.axvspan(s["disturbance_time_s"], s["disturbance_time_s"] + s["disturbance_duration_s"], color="mistyrose",
-               label="lead vehicle brakes")
+    # Braking car first, then its followers in order (cohort ids are stored leader first).
+    t0, t1 = s["disturbance_time_s"], s["disturbance_time_s"] + s["disturbance_duration_s"]
+    window = traj[traj.time_s.between(5, 30)]
+    fig, ax = plt.subplots(figsize=(9, 5))
+    for i, vid in enumerate(cohort_ids):
+        g = window[window.vehicle_id == vid]
+        lowest = g.loc[g.speed_mps.idxmin()]
+        style = dict(lw=3, color="black", label="braking car") if i == 0 else \
+            dict(lw=1.3, color=plt.cm.viridis(i / len(cohort_ids)), label=f"follower {i}")
+        ax.plot(g.time_s, g.speed_mps * 3.6, **style)
+        ax.plot(lowest.time_s, lowest.speed_mps * 3.6, "o", color="red", ms=4,
+                label="lowest speed of each car" if i == 0 else None)
+    ax.axvspan(t0, t1, color="mistyrose", label="braking car brakes")
     ax.set(xlabel="time [s]", ylabel="speed [km/h]",
-           title=f"Platoon disturbance: amplification ratio {checks['P1_amplification_ratio']:.2f}")
-    ax.legend(fontsize=8)
+           title=f"Braking disturbance: largest follower speed drop / braking car's drop = "
+                 f"{checks['P1_amplification_ratio']:.2f}")
+    ax.legend(fontsize=7, ncol=3, loc="lower right")
     fig.tight_layout(); fig.savefig(OUT / "disturbance_speed_traces.png", dpi=150); plt.close(fig)
 
 
@@ -118,7 +126,7 @@ def main() -> None:
     checks = prediction_checks(config, metric, tables)
     for name, frame in tables.items():
         frame.to_csv(OUT / f"{name}.csv", index=False)
-    plot_evidence(config, tables, checks)
+    plot_evidence(config, tables, checks, metric["disturbance_cohort"].split(";"))
 
     timestep = {}
     for dt in (0.05, 0.1, 0.2):
