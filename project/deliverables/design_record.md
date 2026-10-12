@@ -6,7 +6,7 @@
 
 The preliminary question was whether predecessor-acceleration communication can suppress a finite lead-braking disturbance beyond what local ACC can accomplish in mixed traffic. The initial prediction was that CACC would reduce the maximum follower speed loss relative to ACC, while command saturation and a local emergency rule would preserve nonnegative gaps. A second prediction was that the benefit would weaken under message delay/dropout.
 
-Pathway A was selected because it supports a bounded vehicle-level comparison and reuses the common simulator, detector, forecast, and TMC interfaces. The project is scoped as an individual submission. `Rocair` owns model design, controller implementation, integration, tests, experiments, interpretation, and presentation; the official course name/UID must be confirmed before submission.
+Pathway A was selected because it supports a bounded vehicle-level comparison and reuses the common simulator, detector, forecast, and TMC interfaces. The project is scoped as an individual submission. `Ruopeng` owns model design, controller implementation, integration, tests, experiments, interpretation, and presentation; the official course UID must be confirmed before submission.
 
 ### Model and minimum example
 

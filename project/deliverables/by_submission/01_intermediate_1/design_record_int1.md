@@ -1,6 +1,6 @@
 # Design record - Intermediate 1: proposal, interfaces, minimum simulation
 
-Team: Seunghun Oh, Rocair (confirm official names/UIDs). Pathway: CAV (preliminary).
+Team: Seunghun Oh, Ruopeng (confirm official names/UIDs). Pathway: CAV (preliminary).
 Companion files in this folder: `experiment_record.md` (pre-run predictions and results) and
 `contribution_record_int1.md` (roles, vehicle traces, individual answers).
 

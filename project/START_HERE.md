@@ -31,5 +31,5 @@ CACC has incremental value over matched ACC in the selected 50% penetration test
 
 ## 5. Immediate administrative check
 
-The project currently uses `Rocair` provisionally. Replace it with your official course name and UID before submission, and check Canvas for any file-naming rule that is not stated in the supplied design guide.
+The project uses the contributor name `Ruopeng`. Add the official course UID before submission, and check Canvas for any file-naming rule that is not stated in the supplied design guide.
 

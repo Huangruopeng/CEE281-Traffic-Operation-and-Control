@@ -25,7 +25,7 @@ For stage-by-stage packaging and oral-preparation guidance, begin at [`by_submis
 | README with one command, dependencies, inputs/outputs, limitations | Complete | `README.md`, `run_all.sh`, `requirements.txt` |
 | Experiment record | Complete | `outputs/results/experiment_record.csv` |
 | Source-to-design table and AI disclosure | Complete | `deliverables/` |
-| Named individual contribution record | Provisional | `Rocair` used; replace with official name/UID if needed |
+| Named individual contribution record | Provisional | `Ruopeng` used; add the official UID before submission |
 | Six-page final design record plus references/plots/code | Complete | `final_report.pdf` (six main pages plus references/traceability) |
 | Final presentation: baseline/control, mechanism, failure, adoption defense | Complete | `final_presentation.pdf`, `presentation_source.md`, `presentation_script.md` |
 

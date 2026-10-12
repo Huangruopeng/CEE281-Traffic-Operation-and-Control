@@ -1,6 +1,6 @@
 # Individual contribution record
 
-**Contributor:** Rocair (individual project; replace with the official course name and UID if different)
+**Contributor:** Ruopeng (individual project; add the official course UID before submission)
 
 | Owned component | Code/artifact location | Tests or evidence owned | Conclusion owned |
 |---|---|---|---|

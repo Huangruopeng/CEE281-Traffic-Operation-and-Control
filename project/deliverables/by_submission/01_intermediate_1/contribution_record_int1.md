@@ -16,7 +16,7 @@ alone, and explains one test of the other person's interface.
 | Vehicle traced | `veh_0290` (ramp vehicle): reaches the ramp at 283 s, waits 356 s while merges are blocked, merges at 639 s, then follows the IDM to the exit. Show its row history in `trajectories.csv` and the ramp queue in `queues.csv` |
 | Test of partner's interface explained | detector recount: counts in `observations.csv` equal the vehicle crossings logged in `crossings.csv` (`audit_detector_counts` in `observation.py`) |
 
-## Rocair - boundaries, bottleneck and observations
+## Ruopeng - boundaries, bottleneck and observations
 
 | | |
 |---|---|
@@ -36,20 +36,20 @@ Evidence to bring: the IDM equation in `idm_acceleration` (terms with T and a_ma
 the linear stability result in `experiment_record.md` (unstable below about 72 km/h for T = 1.0 s).
 
 - Seunghun: I think the key part of IDM is how a car responds when the gap to the car ahead shrinks. In our runs, stronger braking by the lead car caused a larger speed drop farther back in the platoon: the speed-drop ratio rose from 0.66 with a −2.5 m/s² brake to 0.73 with a −3.5 m/s² brake. Both ratios are below 1, though, so the disturbance still faded as it moved through the platoon.
-- Rocair:
+- Ruopeng: I think the desired time gap `T` and the operating speed matter most. `T` enters the desired gap through `vT`, so it changes how strongly a driver responds to a shrinking gap. At 79 km/h with `T = 1.0 s`, the platoon is above the approximate 72-km/h stability boundary, and the measured ratio of 0.66 shows that the disturbance fades. A larger `T` gives more following margin, but it also lowers capacity, which is why `T = 1.6 s` creates the bottleneck queue.
 
 **2. Why is the selected time step appropriate, and what failure would make you reduce it?**
 Evidence to bring: `P8_timestep` in `outputs/int1/int1_results.json` (0.05 / 0.1 / 0.2 s).
 
 - Seunghun: A 0.1 s time step seems fine for this setup. When I reduced it to 0.05 s, the speed-drop ratio changed by 0.4% and total delay by 1.4%. I would use a smaller step if cars started overlapping, their motion showed sudden numerical jumps, or halving the step changed the results substantially.
-- Rocair:
+- Ruopeng: A 0.1-s step gives 40 updates during the four-second brake and 24 between mainline arrivals. Across 0.05, 0.1, and 0.2 s, the amplification ratio stays between 0.655 and 0.664, the minimum gap stays near 5.7 m, and no overlaps occur. I would reduce the step if halving it changed the queue location, merge decisions, detector counts, or produced overlaps. The one-interval D1 shift at 0.2 s does not change the conclusion.
 
 **3. Pick one parameter: why is its value plausible, what source supports it, and how would a larger value change the result?**
 Evidence to bring: the source table in `design_record_int1.md`; for T, the zone capacity of 1,743 veh/h
 with T = 1.6 s versus 2,519 veh/h with T = 1.0 s.
 
 - Seunghun: I used T = 1.0 s, based on the freeway-car values in Table 11.2 of Treiber and Kesting (2013). At 100 km/h, the vT part of the desired gap is about 28 m, which gives me a sense of what that setting means in practice. Increasing T means cars leave more space. The IDM capacity formula gives 2,519 veh/h at T = 1.0 s but only 1,743 veh/h at T = 1.6 s. That lower capacity is why the 1.6 s zone acts as a bottleneck: under the same demand, the queue starts earlier and grows longer.
-- Rocair: 
+- Ruopeng: I selected the comfortable-deceleration magnitude `b = 1.5 m/s²`, supported by Treiber and Kesting (2013), Table 11.2. It represents normal comfortable braking rather than an emergency limit. In our merge rule, a larger `b` would allow a follower to accept stronger braking, so more ramp vehicles could enter and the ramp queue might shrink. However, it could also create tighter merges, harder mainline braking, and smaller gaps. This parameter therefore exposes a tradeoff between ramp storage and mainline stability.
 
 ## Changes made in response to feedback
 

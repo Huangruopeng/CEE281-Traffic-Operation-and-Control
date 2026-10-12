@@ -111,7 +111,7 @@ The suite checks IDM free motion and equilibrium, vehicle conservation including
 - The occupancy input is a virtual 50-m area occupancy proxy, so the ALINEA result is a foundation demonstration rather than a field-ready meter calibration.
 - The 2.0-m numerical invariant is a final verification backstop; it was not activated in any of the 12 final scenarios, but neither it nor the controller supervisor is a production safety certification.
 - No result establishes crash reduction. Minimum gaps and hard-braking counts are simulation indicators only.
-- The official student name/UID should be checked on the title page and contribution record before submission; the workspace account name `Rocair` is used provisionally.
+- The official student UID should be checked on the title page and contribution record before submission; the contributor name is `Ruopeng`.
 
 ## Directory map
 

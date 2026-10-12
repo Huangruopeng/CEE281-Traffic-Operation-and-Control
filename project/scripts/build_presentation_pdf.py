@@ -49,7 +49,7 @@ def title(c, kicker, heading, slide_no):
     c.setStrokeColor(MID)
     c.setLineWidth(0.6)
     c.line(0.62 * inch, 0.42 * inch, 12.72 * inch, 0.42 * inch)
-    para(c, "CEE 281 | Pathway A | Rocair (provisional)", 0.62 * inch, 0.34 * inch, 5 * inch, 0.2 * inch, 8.5, GRAY)
+    para(c, "CEE 281 | Pathway A | Ruopeng", 0.62 * inch, 0.34 * inch, 5 * inch, 0.2 * inch, 8.5, GRAY)
     para(c, str(slide_no), 12.25 * inch, 0.34 * inch, 0.45 * inch, 0.2 * inch, 8.5, GRAY, align=TA_CENTER)
 
 
@@ -123,7 +123,7 @@ def build():
     c.setFillColor(ORANGE)
     c.roundRect(9.15 * inch, 1.7 * inch, 3.1 * inch, 0.55 * inch, 8, fill=1, stroke=0)
     para(c, "REVISE BEFORE ADOPTION", 9.23 * inch, 2.08 * inch, 2.95 * inch, 0.3 * inch, 13, colors.white, True, TA_CENTER)
-    para(c, "Rocair (individual project; name/UID provisional)", 0.65 * inch, 0.6 * inch, 7 * inch, 0.3 * inch, 10, colors.HexColor("#AFC6DA"))
+    para(c, "Ruopeng (individual project; UID to be added)", 0.65 * inch, 0.6 * inch, 7 * inch, 0.3 * inch, 10, colors.HexColor("#AFC6DA"))
     c.showPage()
 
     # Slide 2

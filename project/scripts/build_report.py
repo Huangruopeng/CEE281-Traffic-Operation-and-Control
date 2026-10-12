@@ -67,7 +67,7 @@ def header_footer(canvas, doc):
     canvas.line(0.58 * inch, 0.48 * inch, 7.92 * inch, 0.48 * inch)
     canvas.setFillColor(colors.HexColor("#5C6B78"))
     canvas.setFont("Helvetica", 7.5)
-    canvas.drawString(0.58 * inch, 0.29 * inch, "CEE 281 | Pathway A | Rocair (provisional)")
+    canvas.drawString(0.58 * inch, 0.29 * inch, "CEE 281 | Pathway A | Ruopeng")
     canvas.drawRightString(7.92 * inch, 0.29 * inch, f"Page {doc.page}")
     if doc.page > 1:
         canvas.setFillColor(NAVY)
@@ -150,7 +150,7 @@ def main():
         leftMargin=0.58 * inch, rightMargin=0.58 * inch,
         topMargin=0.60 * inch, bottomMargin=0.58 * inch,
         title="CEE 281 Pathway A - Connected and Automated Vehicle Control",
-        author="Rocair (provisional)",
+        author="Ruopeng",
     )
     frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="main")
     doc.addPageTemplates([PageTemplate(id="report", frames=[frame], onPage=header_footer)])
@@ -160,7 +160,7 @@ def main():
     story += [
         Spacer(1, 0.15 * inch),
         P("Connected and Automated Vehicle Control", title),
-        P("CEE 281 Final Design Report | Pathway A | Fall 2026<br/><b>Contributor:</b> Rocair (individual project; official name/UID to be confirmed)", subtitle),
+        P("CEE 281 Final Design Report | Pathway A | Fall 2026<br/><b>Contributor:</b> Ruopeng (individual project; official UID to be added)", subtitle),
         HRFlowable(width="100%", thickness=2, color=ORANGE, spaceBefore=1, spaceAfter=10),
         P("Bounded design question", h1),
         P("At 50% and 100% equipment penetration, does delayed predecessor-acceleration feedforward (CACC) reduce a lead-braking disturbance relative to otherwise identical ACC while maintaining throughput and bounded gaps in a mixed, open freeway simulation?", callout),
@@ -267,7 +267,7 @@ def main():
         ["Virtual occupancy", "Not equivalent to field loop calibration", "Detector placement/target sensitivity under binding demand"],
     ]
     story += [table(limits, [1.55*inch, 2.25*inch, 3.15*inch], font=7.6)]
-    story += [P("Reproducibility and individual contribution", h2), P("Rocair owns dynamics, arrivals/boundaries, detectors, forecasts, ramp control, ACC/CACC communication, experiments, verification, interpretation, and presentation. Run <font name='Courier'>bash run_all.sh</font>. Versioned configuration, raw CSVs, plots, experiment record, decision trace, source-to-design table, AI disclosure, and contribution record are included. The submitter must replace the provisional name/UID and personally verify the cited sources and code behavior.", body), PageBreak()]
+    story += [P("Reproducibility and individual contribution", h2), P("Ruopeng owns dynamics, arrivals/boundaries, detectors, forecasts, ramp control, ACC/CACC communication, experiments, verification, interpretation, and presentation. Run <font name='Courier'>bash run_all.sh</font>. Versioned configuration, raw CSVs, plots, experiment record, decision trace, source-to-design table, AI disclosure, and contribution record are included. The submitter must add the official UID and personally verify the cited sources and code behavior.", body), PageBreak()]
 
     # Page 7 References
     story += [P("References", h1)]
