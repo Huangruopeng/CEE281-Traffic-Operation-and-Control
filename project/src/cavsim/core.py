@@ -147,6 +147,8 @@ class RampMeter:
         }
 
     def release_due(self, time_s: float) -> bool:
+        if self.mode == "unmetered":
+            return True  # no meter: the front ramp vehicle may try to merge at every step
         if time_s + 1e-9 < self.next_release_s:
             return False
         interval = 3600.0 / max(self.rate_vph, 1.0)
@@ -160,23 +162,17 @@ def idm_acceleration(
     desired_speed_mps: float,
     cfg: dict[str, float],
     vehicle_length_m: float,
-    time_gap_offset_s: float = 0.0,
 ) -> float:
-    """Treiber-Hennecke-Helbing IDM with s1=0.
-
-    `time_gap_offset_s` raises the time gap T locally; this is how the bottleneck is modelled
-    (Treiber, Hennecke & Helbing 2000 model bottlenecks by locally increasing T).
-    """
+    """Treiber-Hennecke-Helbing IDM with s1=0."""
     a = float(cfg["maximum_accel_mps2"])
     free_term = 1.0 - (vehicle.v / max(desired_speed_mps, 0.1)) ** float(cfg["accel_exponent"])
     if leader is None:
         return a * free_term
     gap = max(leader.x - vehicle.x - vehicle_length_m, 0.1)
     closing = vehicle.v - leader.v
-    time_gap = float(cfg["desired_time_gap_s"]) + time_gap_offset_s
     s_star = float(cfg["minimum_gap_m"]) + max(
         0.0,
-        vehicle.v * time_gap
+        vehicle.v * float(cfg["desired_time_gap_s"])
         + vehicle.v * closing / (2.0 * math.sqrt(a * float(cfg["comfortable_decel_mps2"]))),
     )
     return a * (free_term - (s_star / gap) ** 2)
@@ -189,7 +185,6 @@ def automated_command(
     cfg: dict[str, float],
     vehicle_length_m: float,
     feedforward_a: float,
-    time_gap_offset_s: float = 0.0,
 ) -> tuple[float, dict[str, float]]:
     """Constant-time-headway PD controller with optional predecessor feedforward."""
     speed_cmd = float(cfg["speed_gain_per_s"]) * (desired_speed_mps - vehicle.v)
@@ -200,8 +195,7 @@ def automated_command(
         relative_speed = math.nan
     else:
         gap = leader.x - vehicle.x - vehicle_length_m
-        time_gap = float(cfg["desired_time_gap_s"]) + time_gap_offset_s
-        desired_gap = float(cfg["standstill_gap_m"]) + time_gap * vehicle.v
+        desired_gap = float(cfg["standstill_gap_m"]) + float(cfg["desired_time_gap_s"]) * vehicle.v
         spacing_error = gap - desired_gap
         relative_speed = leader.v - vehicle.v
         gap_cmd = (
@@ -253,6 +247,7 @@ class FreewaySimulation:
         self.total_vehicle_delay_s = 0.0
         self.global_min_gap_m = math.inf
         self.overlap_steps = 0            # vehicle-steps with a negative gap (collision); must stay 0
+        self.zipper_ramp_turn = True      # zipper merge: True = the next slot at the merge goes to the ramp
         self.hardest_braking_mps2 = 0.0   # most negative applied acceleration
         self.hard_brake_events = 0
         self.message_attempts = 0
@@ -285,11 +280,27 @@ class FreewaySimulation:
 
     def _demand_schedules(self) -> tuple[list[float], list[float]]:
         high = self.scenario["demand"] == "high"
-        main_rate = float(self.cfg["high_mainline_demand_vph"] if high else self.cfg["mainline_demand_vph"])
-        ramp_rate = float(self.cfg["high_ramp_demand_vph"] if high else self.cfg["ramp_demand_vph"])
+        main_rate = float(self.scenario.get("mainline_demand_vph",
+                          self.cfg["high_mainline_demand_vph"] if high else self.cfg["mainline_demand_vph"]))
+        ramp_rate = float(self.scenario.get("ramp_demand_vph",
+                          self.cfg["high_ramp_demand_vph"] if high else self.cfg["ramp_demand_vph"]))
         end = float(self.cfg["demand_end_s"])
-        main = list(np.arange(1.0, end, 3600.0 / main_rate))
-        ramp = list(np.arange(3.0, end, 3600.0 / ramp_rate))
+        if self.scenario.get("arrival_process") == "poisson":
+            # Random arrivals with the same mean rate: exponential gaps, own seeded stream.
+            arrivals_rng = random.Random(int(self.cfg["seed"]) + 1)
+
+            def poisson(rate_vph: float) -> list[float]:
+                times, t = [], 0.0
+                while rate_vph > 0:
+                    t += arrivals_rng.expovariate(rate_vph / 3600.0)
+                    if t >= end:
+                        break
+                    times.append(t)
+                return times
+
+            return poisson(main_rate), poisson(ramp_rate)
+        main = list(np.arange(1.0, end, 3600.0 / main_rate)) if main_rate > 0 else []
+        ramp = list(np.arange(3.0, end, 3600.0 / ramp_rate)) if ramp_rate > 0 else []
         return main, ramp
 
     def _is_equipped(self, vehicle_index: int) -> bool:
@@ -331,32 +342,31 @@ class FreewaySimulation:
     def _desired_speed(self, x: float) -> float:
         return float(self.cfg["free_speed_mps"])
 
-    def _time_gap_offset(self, x: float) -> float:
-        """Extra time gap inside the bottleneck zone: drivers there keep T = bottleneck_time_gap_s.
-        A local increase of T is how Treiber, Hennecke & Helbing (2000) model a bottleneck."""
-        if float(self.cfg["bottleneck_start_m"]) <= x <= float(self.cfg["bottleneck_end_m"]):
-            return float(self.cfg["bottleneck_time_gap_s"]) - float(self.human_cfg["desired_time_gap_s"])
-        return 0.0
+    def _merge_safe_decel(self, speed: float) -> float:
+        """Largest braking a merge may impose on a vehicle at this speed: merge_safe_decel_mps2 at the desired
+        speed, rising linearly to merge_safe_decel_standstill_mps2 at standstill (hard braking is less risky
+        when slow). Same rule as the MOBIL code of traffic-simulation.de (Treiber)."""
+        rel = min(speed / float(self.cfg["free_speed_mps"]), 1.0)
+        return rel * float(self.cfg["merge_safe_decel_mps2"]) + (1.0 - rel) * float(self.cfg["merge_safe_decel_standstill_mps2"])
 
-    def _insertion_is_safe(self, x: float, v: float, ahead: Vehicle | None, behind: Vehicle | None) -> bool:
-        """One rule for the road entry and the ramp merge: a vehicle placed at x with speed v is
-        admitted only if both gaps are at least s0 and, by the IDM, neither it nor its new follower
-        would have to brake harder than the comfortable deceleration b (TFD Table 11.2)."""
+    def _insertion_is_safe(self, x: float, v: float, ahead: Vehicle | None, behind: Vehicle | None,
+                           b_limit) -> bool:
+        """A vehicle placed at x with speed v is admitted only if both gaps are at least s0 and, by the
+        IDM, neither it nor its new follower would have to brake harder than b_limit(its speed)."""
         length = float(self.cfg["vehicle_length_m"])
         s0 = float(self.human_cfg["minimum_gap_m"])
-        b = float(self.human_cfg["comfortable_decel_mps2"])
         candidate = Vehicle("candidate", x, v, 0.0, "candidate", False, "human", self.time_s)
         if ahead is not None:
             if ahead.x - x - length < s0:
                 return False
-            a = idm_acceleration(candidate, ahead, self._desired_speed(x), self.human_cfg, length, self._time_gap_offset(x))
-            if a < -b:
+            a = idm_acceleration(candidate, ahead, self._desired_speed(x), self.human_cfg, length)
+            if a < -b_limit(v):
                 return False
         if behind is not None:
             if x - behind.x - length < s0:
                 return False
-            a = idm_acceleration(behind, candidate, self._desired_speed(behind.x), self.human_cfg, length, self._time_gap_offset(behind.x))
-            if a < -b:
+            a = idm_acceleration(behind, candidate, self._desired_speed(behind.x), self.human_cfg, length)
+            if a < -b_limit(behind.v):
                 return False
         return True
 
@@ -377,20 +387,22 @@ class FreewaySimulation:
             # Mainline entry at x = 0 at the speed of the vehicle ahead (at most v0), if safe.
             nearest = min(self.vehicles, key=lambda v: v.x, default=None)
             v_in = min(float(self.cfg["free_speed_mps"]), nearest.v) if nearest else float(self.cfg["free_speed_mps"])
-            if self._insertion_is_safe(0.0, v_in, nearest, None):
+            if self._insertion_is_safe(0.0, v_in, nearest, None, lambda speed: float(self.human_cfg["comfortable_decel_mps2"])):
                 arrival = self.mainline_queue.popleft()
                 self.vehicles.append(self._new_vehicle(0.0, v_in, "mainline", arrival))
 
         if self.ramp_queue and self.meter.release_due(self.time_s):
-            # Ramp merge at the point x = ramp_position at the speed of its new leader (assumption:
-            # the acceleration lane lets the ramp vehicle match the mainline speed), if safe.
+            # Ramp merge at the point x = ramp_position at the speed of its new leader (capped below), if the
+            # new follower need not brake harder than the speed-dependent merge limit. The merge is the bottleneck.
             x = float(self.cfg["ramp_position_m"])
             ahead = min((v for v in self.vehicles if v.x >= x), key=lambda v: v.x, default=None)
             behind = max((v for v in self.vehicles if v.x < x), key=lambda v: v.x, default=None)
-            merge_v = ahead.v if ahead else float(self.cfg["free_speed_mps"])
-            if self._insertion_is_safe(x, merge_v, ahead, behind):
+            # Entry speed is capped: the short acceleration lane does not let ramp vehicles reach v0.
+            merge_v = min(ahead.v if ahead else float(self.cfg["free_speed_mps"]), float(self.cfg["merge_speed_max_mps"]))
+            if self._insertion_is_safe(x, merge_v, ahead, behind, self._merge_safe_decel):
                 arrival = self.ramp_queue.popleft()
                 self.vehicles.append(self._new_vehicle(x, merge_v, "ramp", arrival))
+                self.zipper_ramp_turn = False
             else:
                 # Failed gap acceptance does not consume the scheduled release opportunity.
                 self.meter.next_release_s = self.time_s + min(1.0, 3600.0 / max(self.meter.rate_vph, 1.0))
@@ -429,6 +441,24 @@ class FreewaySimulation:
         self.message_received += 1
         return msg_a, True, self.time_s - msg_t
 
+    def _zipper_leader(self, vehicle: Vehicle, leader: Vehicle | None) -> Vehicle | None:
+        """Zipper merge in slow traffic. If a ramp vehicle is waiting, it is the ramp's turn, and the first
+        mainline vehicle within 100 m upstream of the merge drives slower than zipper_speed_mps and can stop
+        behind the merge slot with the braking a merge may impose (at most max_braking_mps2), that vehicle
+        stops for an imaginary standing car at the merge point. This opens one slot for the ramp vehicle;
+        after it merges, the next slot goes to the mainline. A vehicle too close to stop passes, and the next
+        one yields."""
+        x_merge = float(self.cfg["ramp_position_m"])
+        slot_rear = x_merge - float(self.cfg["vehicle_length_m"])
+        if not (self.ramp_queue and self.zipper_ramp_turn and vehicle.x < x_merge
+                and (leader is None or leader.x >= x_merge)
+                and x_merge - vehicle.x < 100.0 and vehicle.v < float(self.cfg["zipper_speed_mps"])
+                # only a vehicle that can still stop behind the slot yields
+                and slot_rear - vehicle.x - float(self.human_cfg["minimum_gap_m"])
+                >= vehicle.v ** 2 / (2.0 * min(self._merge_safe_decel(vehicle.v), float(self.cfg["max_braking_mps2"])))):
+            return leader
+        return Vehicle("zipper_slot", x_merge, 0.0, 0.0, "virtual", False, "human", self.time_s)
+
     def _compute_commands(self) -> dict[str, float]:
         self.vehicles.sort(key=lambda v: v.x)
         commands: dict[str, float] = {}
@@ -437,10 +467,10 @@ class FreewaySimulation:
             self._select_disturbance_cohort()
         for i, vehicle in enumerate(self.vehicles):
             leader = self.vehicles[i + 1] if i + 1 < len(self.vehicles) else None
+            leader = self._zipper_leader(vehicle, leader)
             desired_speed = self._desired_speed(vehicle.x)
             if vehicle.controller == "human":
-                cmd = idm_acceleration(vehicle, leader, desired_speed, self.human_cfg, float(self.cfg["vehicle_length_m"]),
-                                       self._time_gap_offset(vehicle.x))
+                cmd = idm_acceleration(vehicle, leader, desired_speed, self.human_cfg, float(self.cfg["vehicle_length_m"]))
                 detail = {"gap_m": math.inf if leader is None else leader.x - vehicle.x - float(self.cfg["vehicle_length_m"]), "spacing_error_m": math.nan, "relative_speed_mps": math.nan, "feedforward_accel_mps2": 0.0, "unbounded_command_mps2": cmd}
                 source = "IDM"
                 msg_valid = False
@@ -458,7 +488,7 @@ class FreewaySimulation:
                     ff, msg_valid, msg_age = self._message_for(leader, vehicle)
                 cmd, detail = automated_command(
                     vehicle, leader, desired_speed, self.auto_cfg,
-                    float(self.cfg["vehicle_length_m"]), ff, self._time_gap_offset(vehicle.x),
+                    float(self.cfg["vehicle_length_m"]), ff,
                 )
                 vehicle.command_a = cmd
                 vehicle.next_control_time = self.time_s + float(self.cfg["control_update_s"])
@@ -588,7 +618,7 @@ class FreewaySimulation:
                     a_new = min(a_new, cmd)
                 a_new = float(np.clip(a_new, self.auto_cfg["maximum_brake_mps2"], self.auto_cfg["maximum_accel_mps2"]))
             else:
-                a_new = cmd  # human driver: the IDM acceleration is applied as is
+                a_new = max(cmd, -float(self.cfg["max_braking_mps2"]))  # human: IDM, within physical braking
             if vehicle.v + a_new * dt < 0.0:
                 # It would roll backwards within the step: it stops instead.
                 x_new = vehicle.x - vehicle.v * vehicle.v / (2.0 * a_new)
@@ -620,8 +650,11 @@ class FreewaySimulation:
             proposals[vehicle.vehicle_id] = (x_new, v_new, a_new)
             leader_x_new, leader_v_new = x_new, v_new
 
+        x_merge = float(self.cfg["ramp_position_m"])
         for vehicle in self.vehicles:
             x_new, v_new, a_new = proposals[vehicle.vehicle_id]
+            if old_x[vehicle.vehicle_id] < x_merge <= x_new:
+                self.zipper_ramp_turn = True
             for detector in self.detectors:
                 if old_x[vehicle.vehicle_id] < detector.position_m <= x_new:
                     detector.crossing(vehicle.vehicle_id, v_new)
@@ -811,9 +844,6 @@ class FreewaySimulation:
             "road": {
                 "length_m": float(self.cfg["road_length_m"]),
                 "ramp_position_m": float(self.cfg["ramp_position_m"]),
-                "bottleneck_start_m": float(self.cfg["bottleneck_start_m"]),
-                "bottleneck_end_m": float(self.cfg["bottleneck_end_m"]),
-                "bottleneck_time_gap_s": float(self.cfg["bottleneck_time_gap_s"]),
                 "vehicle_length_m": length,
             },
         }

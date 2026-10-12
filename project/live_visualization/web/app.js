@@ -150,10 +150,8 @@ function drawRoad() {
   els.panRight.disabled = viewEndM >= road.length_m - .01;
 
   // Whole-road overview strip: every vehicle as a dot colored by speed (red = stopped, green = v0),
-  // the bottleneck zone, the merge, the detectors, and a box marking the merge-detail window below.
+  // the merge (the bottleneck), the detectors, and a box marking the merge-detail window below.
   const ovY = 48, ovX = (x) => left + (x / road.length_m) * (right - left);
-  ctx.fillStyle = "rgba(240,183,99,.18)";
-  ctx.fillRect(ovX(road.bottleneck_start_m), ovY - 7, ovX(road.bottleneck_end_m) - ovX(road.bottleneck_start_m), 14);
   ctx.strokeStyle = "rgba(215,227,232,.35)"; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(left, ovY); ctx.lineTo(right, ovY); ctx.stroke();
   ctx.strokeStyle = "rgba(240,183,99,.8)";
@@ -170,18 +168,7 @@ function drawRoad() {
   ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.setLineDash([2, 2]);
   ctx.strokeRect(ovX(viewStartM), ovY - 10, ovX(viewEndM) - ovX(viewStartM), 20); ctx.setLineDash([]);
   ctx.fillStyle = "rgba(174,191,200,.6)"; ctx.font = "8px ui-monospace, monospace"; ctx.textAlign = "left";
-  ctx.fillText(`WHOLE ROAD 0-${road.length_m / 1000} km · dashed box = detail view below · amber = bottleneck · tick = ramp`, left, ovY - 14);
-
-  const bottleStart = mapX(road.bottleneck_start_m), bottleEnd = mapX(road.bottleneck_end_m);
-
-  if (road.bottleneck_end_m >= viewStartM && road.bottleneck_start_m <= viewEndM) {
-    const clippedStart = Math.max(left, bottleStart), clippedEnd = Math.min(right, bottleEnd);
-    ctx.fillStyle = "rgba(240,183,99,.055)"; ctx.fillRect(clippedStart, roadY - 73, clippedEnd - clippedStart, 146);
-    ctx.strokeStyle = "rgba(240,183,99,.25)"; ctx.setLineDash([4, 5]);
-    ctx.strokeRect(clippedStart, roadY - 73, clippedEnd - clippedStart, 146); ctx.setLineDash([]);
-    ctx.fillStyle = "rgba(240,183,99,.55)"; ctx.font = "9px ui-monospace, monospace";
-    ctx.fillText(`BOTTLENECK · T = ${road.bottleneck_time_gap_s ?? "?"} s`, clippedStart + 8, roadY - 57);
-  }
+  ctx.fillText(`WHOLE ROAD 0-${road.length_m / 1000} km · dashed box = detail view below · amber tick = ramp merge (the bottleneck)`, left, ovY - 14);
 
   const rampMerge = mapX(road.ramp_position_m);
   const rampCurve = {
@@ -239,7 +226,7 @@ function drawRoad() {
 
     ctx.strokeStyle = "rgba(240,183,99,.45)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(rampMerge - 8, roadY + 22); ctx.lineTo(rampMerge + 12, roadY + 8); ctx.stroke();
-    ctx.fillStyle = "rgba(240,183,99,.62)"; ctx.font = "8px ui-monospace, monospace"; ctx.fillText("MERGE", rampMerge + 17, roadY + 24);
+    ctx.fillStyle = "rgba(240,183,99,.62)"; ctx.font = "8px ui-monospace, monospace"; ctx.fillText("MERGE = BOTTLENECK", rampMerge + 17, roadY + 24);
 
     const queueShown = Math.min(state.queues.ramp, 10);
     for (let i = 0; i < queueShown; i++) {

@@ -1,9 +1,7 @@
 {
   "simulation": {
     "road_length_m": 2500.0,
-    "ramp_position_m": 1200.0,
-    "bottleneck_start_m": 1600.0,
-    "bottleneck_end_m": 1900.0,
+    "ramp_position_m": 1600.0,
     "detector_positions_m": [
       1450.0,
       2050.0
@@ -24,7 +22,11 @@
     "disturbance_decel_mps2": -2.5,
     "strong_disturbance_decel_mps2": -3.5,
     "free_speed_mps": 33.33,
-    "bottleneck_time_gap_s": 1.6,
+    "merge_safe_decel_mps2": 4.0,
+    "merge_safe_decel_standstill_mps2": 17.0,
+    "merge_speed_max_mps": 24.6,
+    "zipper_speed_mps": 11.11,
+    "max_braking_mps2": 9.0,
     "mainline_demand_vph": 1500.0,
     "ramp_demand_vph": 360.0,
     "high_mainline_demand_vph": 1740.0,
@@ -62,7 +64,7 @@
     "queue_override_vehicles": 25,
     "storage_vehicles": 35
   },
-  "int1_scenario": {"scenario_id": "int1_minimum", "label": "Intermediate 1 · human drivers only · ramp meter control off", "controller": "human", "penetration": 0.0, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0, "meter_mode": "unmetered"},
+  "int1_scenario": {"scenario_id": "int1_minimum", "label": "Intermediate 1 · human drivers only · ramp meter control off", "mainline_demand_vph": 1900.0, "ramp_demand_vph": 700.0, "arrival_process": "poisson", "controller": "human", "penetration": 0.0, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0, "meter_mode": "unmetered"},
   "experiments": [
     {"scenario_id": "nominal_human", "controller": "human", "penetration": 0.0, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0},
     {"scenario_id": "nominal_acc_50", "controller": "acc", "penetration": 0.5, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0},

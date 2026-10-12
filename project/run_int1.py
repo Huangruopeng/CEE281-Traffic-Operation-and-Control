@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Intermediate 1 minimum case: human drivers, unmetered ramp, one bottleneck, one braking disturbance.
+"""Intermediate 1 minimum case: human drivers, unmetered ramp whose merge is the bottleneck, one braking
+disturbance. A control run without ramp traffic shows whether the merge itself causes the queue.
 
 Usage (from this folder):  python run_int1.py
 Writes outputs/int1/ (CSV tables, figures, int1_results.json) and prints the numbers that are compared
@@ -26,9 +27,11 @@ SLOW_MPS = 40 / 3.6          # "congested" = slower than 40 km/h
 OUT = ROOT / "outputs" / "int1"
 
 
-def run_case(config: dict, dt: float) -> tuple[dict, dict]:
+def run_case(config: dict, dt: float, ramp_traffic: bool = True) -> tuple[dict, dict]:
     sim_cfg = dict(config["simulation"], dt_s=dt, control_update_s=max(dt, 0.1), log_all_vehicles=True)
-    scenario = config["int1_scenario"]          # human drivers only, ramp meter off
+    scenario = dict(config["int1_scenario"])    # human drivers only, ramp meter off
+    if not ramp_traffic:
+        scenario["ramp_demand_vph"] = 0.0       # control run: no ramp vehicles
     meter_cfg = dict(config["ramp_meter"], mode=scenario["meter_mode"])
     sim = FreewaySimulation(sim_cfg, config["human_idm"], config["automated_controller"], meter_cfg, scenario)
     metric = sim.run()
@@ -42,13 +45,13 @@ def prediction_checks(config: dict, metric: dict, tables: dict) -> dict:
     traj, obs, queues = tables["trajectories"], tables["observations"], tables["queues"]
     late = traj[traj.time_s > 30.0]                       # after the platoon disturbance has passed
     slow = late[late.speed_mps < SLOW_MPS]
-    upstream = slow[slow.position_m < s["bottleneck_start_m"]]
+    upstream = slow[slow.position_m < s["ramp_position_m"]]       # queue upstream of the merge
     first = slow.sort_values("time_s").iloc[0] if len(slow) else None
     queue_size = upstream.groupby("time_s").size()
     d1 = obs[obs.sensor_id == "D1"].set_index("interval_end_s").mean_speed_mps
     d2 = obs[obs.sensor_id == "D2"].set_index("interval_end_s").mean_speed_mps
-    in_queue = late[(late.position_m > s["ramp_position_m"]) & (late.position_m < s["bottleneck_start_m"])
-                    & (late.time_s > 300) & (late.time_s < 600)]
+    in_queue = late[(late.position_m > s["ramp_position_m"] - 300) & (late.position_m < s["ramp_position_m"])
+                    & (late.time_s > 300) & (late.time_s < 600)]   # the 300 m just upstream of the merge
     return {
         "P1_amplification_ratio": metric["disturbance_amplification"],
         "P2_first_congestion_x_m": None if first is None else float(first.position_m),
@@ -78,9 +81,7 @@ def plot_evidence(config: dict, tables: dict, checks: dict, cohort_ids: list[str
     fig, ax = plt.subplots(figsize=(10, 5.5))
     sc = ax.scatter(traj.time_s / 60, traj.position_m / 1000, c=traj.speed_mps * 3.6, s=0.4,
                     cmap="RdYlGn", vmin=0, vmax=120, rasterized=True)
-    ax.axhspan(s["bottleneck_start_m"] / 1000, s["bottleneck_end_m"] / 1000, color="0.85", zorder=0,
-               label=f"bottleneck (T = {s['bottleneck_time_gap_s']} s)")
-    ax.axhline(s["ramp_position_m"] / 1000, color="k", lw=0.8, label="on-ramp merge")
+    ax.axhline(s["ramp_position_m"] / 1000, color="k", lw=1.2, label="on-ramp merge (the bottleneck)")
     for i, x in enumerate(s["detector_positions_m"]):
         ax.axhline(x / 1000, color="royalblue", ls="--", lw=0.7, label="detectors D1, D2" if i == 0 else None)
     ax.set(xlabel="time [min]", ylabel="position [km] (traffic moves upward)",
@@ -127,6 +128,8 @@ def main() -> None:
     for name, frame in tables.items():
         frame.to_csv(OUT / f"{name}.csv", index=False)
     plot_evidence(config, tables, checks, metric["disturbance_cohort"].split(";"))
+    m0, t0 = run_case(config, 0.1, ramp_traffic=False)
+    control = prediction_checks(config, m0, t0)
 
     timestep = {}
     for dt in (0.05, 0.1, 0.2):
@@ -134,7 +137,10 @@ def main() -> None:
         c = checks if dt == 0.1 else prediction_checks(config, m, t)
         timestep[str(dt)] = {k: c[k] for k in ("P1_amplification_ratio", "total_delay_veh_h",
                                                "P3_D1_below_40kmh_at_s", "P7_overlap_steps", "P7_minimum_gap_m")}
-    results = {"dt_0.1": checks, "P8_timestep": timestep}
+    results = {"dt_0.1": checks,
+               "no_ramp_control": {k: control[k] for k in ("P2_first_congestion_x_m", "P5_max_vehicles_queued_upstream",
+                                                           "P3_D1_below_40kmh_at_s", "total_delay_veh_h")},
+               "P8_timestep": timestep}
     (OUT / "int1_results.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(json.dumps(results, indent=2))
 

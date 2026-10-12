@@ -28,13 +28,13 @@ Use the two-slide version for the presentation. If only one contribution slide i
 ### Right column
 
 **Ruopeng**  
-*Boundaries, Bottleneck & Observations*
+*Boundaries, Merge & Observations*
 
-- Implemented arrivals, mainline entry, ramp storage, and safe merging
-- Modeled the bottleneck through a local increase in desired time gap
+- Implemented random arrivals, mainline entry, ramp storage, and merging
+- Modeled the on-ramp merge as the bottleneck (speed cap, merge braking limit, zipper turns)
 - Owned D1/D2 detector observations and the live visualization
-- Main finding: the queue formed at **x = 1,621 m** and cleared after demand ended
-- Identified the one-point merge rule as an important limitation
+- Main finding: the queue formed at the **merge (x = 1,600 m)**, spread about **1 km** back, and cleared after demand ended
+- Identified a limitation: yielding vehicles stop completely, so the merge loses about 40% of its capacity
 
 ### Bottom integration line
 
@@ -52,7 +52,7 @@ Place a simple arrow between the two columns:
 
 ### Speaker notes - Ruopeng
 
-> I was responsible for the roadway boundaries and observation side of the simulation. This included vehicle arrivals, safe entry and merging, the bottleneck zone, virtual detectors D1 and D2, and the live visualization. My main result was that the queue first appeared at 1,621 meters, close to the bottleneck entrance, and cleared after arrivals stopped. I also identified a limitation in our one-point merge rule: when congestion reached the ramp area, the safety condition prevented ramp vehicles from merging for several minutes.
+> I was responsible for the roadway boundaries and observation side of the simulation. This included random vehicle arrivals, mainline entry, the ramp merge rule, virtual detectors D1 and D2, and the live visualization. My main result was that the merge itself is the bottleneck: without ramp traffic no queue forms, but with it a queue starts at the merge at 1,600 meters, spreads about one kilometer back with stop-and-go waves, and clears after arrivals stop. I also identified a limitation of our zipper rule: every yielding vehicle stops completely, so the merge passes about 40 percent less traffic than the lane capacity.
 
 ### Transition to the next slide
 
@@ -77,9 +77,9 @@ Place a simple arrow between the two columns:
 
 **Seunghun's cross-module trace**
 
-- `veh_0290`: arrived at the ramp at **283 s**
-- Waited **356 s** while safe merges were unavailable
-- Merged at **639 s**, then followed the IDM to the exit
+- `veh_0358`: arrived at the ramp at **472 s**
+- Waited **10 s**; mainline vehicle `veh_0254` braked to leave a slot (zipper)
+- Merged at **482 s**, then followed the IDM to the exit
 
 **Ruopeng's cross-module trace**
 
@@ -89,11 +89,11 @@ Place a simple arrow between the two columns:
 
 ### Bottom takeaway
 
-**The model is reproducible and internally consistent:** detector counts match crossing records, vehicle conservation holds, overlap count is zero, and the minimum simulated gap is **5.7 m**.
+**The model is reproducible and internally consistent:** detector counts match crossing records, vehicle conservation holds, overlap count is zero, and the minimum simulated gap is **1.8 m**.
 
 ### Speaker notes - Seunghun Oh
 
-> To check Ruopeng's observation interface, I compared every detector count with the individual crossings recorded during the same 30-second interval. The totals matched, so the detector results can be traced back to vehicle-level events. I also followed ramp vehicle 0290 across the interface. It arrived at 283 seconds, remained in the ramp queue while merging was unsafe, entered at 639 seconds, and then continued under the same IDM dynamics as the mainline vehicles.
+> To check Ruopeng's observation interface, I compared every detector count with the individual crossings recorded during the same 30-second interval. The totals matched, so the detector results can be traced back to vehicle-level events. I also followed ramp vehicle 0358 across the interface. It arrived at 472 seconds, waited 10 seconds in the ramp queue, entered at 482 seconds when mainline vehicle 0254 braked to leave a slot, and then continued under the same IDM dynamics as the mainline vehicles.
 
 ### Speaker notes - Ruopeng
 
@@ -121,10 +121,10 @@ Place a simple arrow between the two columns:
 
 ### Ruopeng - Network Boundaries & Observations
 
-- Arrivals, ramp merging, bottleneck, D1/D2, and live view
+- Arrivals, ramp merge (the bottleneck), D1/D2, and live view
 - Observation and control-command interfaces
-- Finding: queue began at **1,621 m** and later cleared
-- Limitation: one-point merge temporarily blocked ramp entry
+- Finding: queue began at the **merge (1,600 m)**, spread about **1 km**, and later cleared
+- Limitation: full stops at the zipper cost about 40% of merge capacity
 - Cross-check: complete vehicle-conservation balance
 
 ### Takeaway
@@ -133,7 +133,7 @@ Place a simple arrow between the two columns:
 
 ### 60-second combined script
 
-> Seunghun owned the vehicle-dynamics layer: the IDM equation, motion updates, trajectory output, and numerical checks. His main conclusion was that the braking disturbance faded, with a speed-drop ratio of 0.66, and that the 0.1-second time step was adequate. Ruopeng owned the network-boundary and observation layer: arrivals, safe ramp merging, the bottleneck, D1 and D2, and the live view. His main conclusion was that the queue formed at the bottleneck entrance and cleared after demand ended, while the simplified one-point merge remained a limitation. We also cross-checked each other's interfaces: Seunghun verified detector counts against crossing records, and Ruopeng verified complete vehicle conservation. This gives us a traceable human-driver baseline for the later ACC and CACC comparison.
+> Seunghun owned the vehicle-dynamics layer: the IDM equation, motion updates, trajectory output, and numerical checks. His main conclusion was that the braking disturbance faded, with a speed-drop ratio of 0.66, and that the 0.1-second time step was adequate. Ruopeng owned the network-boundary and observation layer: arrivals, the ramp merge, D1 and D2, and the live view. His main conclusion was that the merge itself is the bottleneck: the queue formed at the merge, spread about one kilometer back, and cleared after demand ended, while full stops at the zipper remained a limitation. We also cross-checked each other's interfaces: Seunghun verified detector counts against crossing records, and Ruopeng verified complete vehicle conservation. This gives us a traceable human-driver baseline for the later ACC and CACC comparison.
 
 ---
 

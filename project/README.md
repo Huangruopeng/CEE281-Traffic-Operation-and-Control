@@ -11,14 +11,15 @@ bash run_int1.sh
 ```
 
 Runs the unit tests, then the minimum case in `run_int1.py`: human drivers only, ramp meter off, one
-bottleneck (time gap T = 1.6 s at 1,600-1,900 m), one braking disturbance. The result is deterministic:
-speed-drop ratio 0.66, queue starting at 1,621 m, 24 vehicles stored, 0 unfinished vehicles, 0 overlaps.
+braking disturbance, and the on-ramp merge at 1,600 m as the only bottleneck (random arrivals, seed 281,
+plus a control run without ramp traffic). Expected result: speed-drop ratio 0.66; a mainline queue starting
+at the merge, about 1 km long with stop-and-go waves; ramp queue at most 7; 0 unfinished vehicles; 0 overlaps.
 Outputs go to `outputs/int1/`. Records: `deliverables/by_submission/01_intermediate_1/` (design record,
 experiment record with pre-run predictions, contribution record). Live view: `python run_live.py`, then open
 <http://127.0.0.1:8765>; the "Intermediate 1" scenario opens by default.
 
-Note: for Intermediate 1 the human-driver parameters, the bottleneck and the merge rule were changed (see
-the design record). The final-pathway results described further below were produced with the earlier
+Note: for Intermediate 1 the human-driver parameters, the bottleneck (now the merge itself), the arrivals
+and the merge rule were changed (see the design record). The final-pathway results described further below were produced with the earlier
 baseline and will be regenerated.
 
 ## One-command reproduction
