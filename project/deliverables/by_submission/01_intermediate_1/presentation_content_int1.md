@@ -17,9 +17,10 @@ Use the two-slide version for the presentation. If only one contribution slide i
 ### Left column
 
 **Seunghun Oh**  
-*Vehicle Dynamics & Numerical Verification*
+*Vehicle Dynamics, Merge Rule & Verification*
 
 - Implemented and verified the Intelligent Driver Model (IDM)
+- Implemented the ramp merge rule (speed cap, merge braking limit, zipper turns)
 - Owned vehicle motion updates and trajectory outputs
 - Checked free motion, equilibrium, conservation, and time-step sensitivity
 - Main finding: the braking disturbance faded, with a speed-drop ratio of **0.66**
@@ -28,10 +29,9 @@ Use the two-slide version for the presentation. If only one contribution slide i
 ### Right column
 
 **Ruopeng**  
-*Boundaries, Merge & Observations*
+*Boundaries & Observations*
 
-- Implemented random arrivals, mainline entry, ramp storage, and merging
-- Modeled the on-ramp merge as the bottleneck (speed cap, merge braking limit, zipper turns)
+- Implemented random arrivals, mainline entry, and ramp storage
 - Owned D1/D2 detector observations and the live visualization
 - Main finding: the queue formed at the **merge (x = 1,600 m)**, spread about **1 km** back, and cleared after demand ended
 - Identified a limitation: yielding vehicles stop completely, so the merge loses about 40% of its capacity
@@ -48,11 +48,11 @@ Place a simple arrow between the two columns:
 
 ### Speaker notes - Seunghun Oh
 
-> I was responsible for the vehicle-dynamics side of the simulation. I worked with the IDM acceleration equation, vehicle-state updates, and trajectory outputs. I also checked the model under free-motion and equilibrium conditions and compared time steps of 0.05, 0.1, and 0.2 seconds. My main result was that the braking disturbance faded as it moved through the platoon: the maximum follower speed drop was 66 percent of the braking vehicle's speed drop. The sensitivity test also showed that a 0.1-second step was adequate for this experiment.
+> I was responsible for the vehicle-dynamics side of the simulation. I worked with the IDM acceleration equation, vehicle-state updates, the ramp merge rule, and trajectory outputs. I also checked the model under free-motion and equilibrium conditions and compared time steps of 0.05, 0.1, and 0.2 seconds. My main result was that the braking disturbance faded as it moved through the platoon: the maximum follower speed drop was 66 percent of the braking vehicle's speed drop. The sensitivity test also showed that a 0.1-second step was adequate for this experiment.
 
 ### Speaker notes - Ruopeng
 
-> I was responsible for the roadway boundaries and observation side of the simulation. This included random vehicle arrivals, mainline entry, the ramp merge rule, virtual detectors D1 and D2, and the live visualization. My main result was that the merge itself is the bottleneck: without ramp traffic no queue forms, but with it a queue starts at the merge at 1,600 meters, spreads about one kilometer back with stop-and-go waves, and clears after arrivals stop. I also identified a limitation of our zipper rule: every yielding vehicle stops completely, so the merge passes about 40 percent less traffic than the lane capacity.
+> I was responsible for the roadway boundaries and observation side of the simulation. This included random vehicle arrivals, mainline entry, ramp storage, virtual detectors D1 and D2, and the live visualization. My main result was that the merge itself is the bottleneck: without ramp traffic no queue forms, but with it a queue starts at the merge at 1,600 meters, spreads about one kilometer back with stop-and-go waves, and clears after arrivals stop. I also identified a limitation of our zipper rule: every yielding vehicle stops completely, so the merge passes about 40 percent less traffic than the lane capacity.
 
 ### Transition to the next slide
 
@@ -113,7 +113,7 @@ Place a simple arrow between the two columns:
 
 ### Seunghun Oh - Vehicle Dynamics
 
-- IDM acceleration and vehicle-state updates
+- IDM acceleration, vehicle-state updates, and the ramp merge rule
 - Trajectory, minimum-gap, overlap, and braking metrics
 - Time-step sensitivity: 0.05 / 0.1 / 0.2 s
 - Finding: disturbance faded; speed-drop ratio = **0.66**
@@ -121,7 +121,7 @@ Place a simple arrow between the two columns:
 
 ### Ruopeng - Network Boundaries & Observations
 
-- Arrivals, ramp merge (the bottleneck), D1/D2, and live view
+- Arrivals, ramp storage, D1/D2, and live view
 - Observation and control-command interfaces
 - Finding: queue began at the **merge (1,600 m)**, spread about **1 km**, and later cleared
 - Limitation: full stops at the zipper cost about 40% of merge capacity
@@ -133,7 +133,7 @@ Place a simple arrow between the two columns:
 
 ### 60-second combined script
 
-> Seunghun owned the vehicle-dynamics layer: the IDM equation, motion updates, trajectory output, and numerical checks. His main conclusion was that the braking disturbance faded, with a speed-drop ratio of 0.66, and that the 0.1-second time step was adequate. Ruopeng owned the network-boundary and observation layer: arrivals, the ramp merge, D1 and D2, and the live view. His main conclusion was that the merge itself is the bottleneck: the queue formed at the merge, spread about one kilometer back, and cleared after demand ended, while full stops at the zipper remained a limitation. We also cross-checked each other's interfaces: Seunghun verified detector counts against crossing records, and Ruopeng verified complete vehicle conservation. This gives us a traceable human-driver baseline for the later ACC and CACC comparison.
+> Seunghun owned the vehicle-dynamics layer: the IDM equation, motion updates, the ramp merge rule, trajectory output, and numerical checks. His main conclusion was that the braking disturbance faded, with a speed-drop ratio of 0.66, and that the 0.1-second time step was adequate. Ruopeng owned the network-boundary and observation layer: arrivals, ramp storage, D1 and D2, and the live view. His main conclusion was that the merge itself is the bottleneck: the queue formed at the merge, spread about one kilometer back, and cleared after demand ended, while full stops at the zipper remained a limitation. We also cross-checked each other's interfaces: Seunghun verified detector counts against crossing records, and Ruopeng verified complete vehicle conservation. This gives us a traceable human-driver baseline for the later ACC and CACC comparison.
 
 ---
 

@@ -3,29 +3,29 @@
 Proposed split (to be confirmed by both team members). Each person owns one coherent part, can run it
 alone, and explains one test of the other person's interface.
 
-## Seunghun Oh - vehicle dynamics and numerical verification
+## Seunghun Oh - vehicle dynamics, merge rule and numerical verification
 
 | | |
 |---|---|
-| Component | IDM car following and the vehicle update |
-| Code location | `src/cavsim/core.py`: `idm_acceleration`, human branch of `FreewaySimulation._compute_commands`, `FreewaySimulation._advance` (stop within a step, 9 m/s² braking cap, overlap counting) |
+| Component | IDM car following, the vehicle update, and the merge rule (speed cap, merge braking limit, zipper) |
+| Code location | `src/cavsim/core.py`: `idm_acceleration`, human branch of `FreewaySimulation._compute_commands`, `FreewaySimulation._advance` (stop within a step, 9 m/s² braking cap, overlap counting), `_insertion_is_safe`, `_merge_safe_decel`, `_zipper_leader` |
 | Interface owned | Vehicle state (`trajectories.csv`); evaluation metrics minimum gap, `overlap_steps`, hardest braking |
 | Tests owned | `test_idm_free_motion`, `test_idm_equilibrium`, conservation part of `test_minimum_case_conservation_and_detector_audit`, time-step check in `run_int1.py` (0.05 / 0.1 / 0.2 s) |
 | Conclusion owned | Prediction 1: the free-flow braking disturbance fades (ratio 0.66); a 0.1-s step is adequate |
-| Planned next tests | where the stop-and-go waves in the merge queue start and how they travel back; time-step check of the queue dynamics |
+| Planned next tests | a zipper rule in which yielding vehicles slow down instead of stopping (the merge now loses 40% of its capacity); time-step check of the queue dynamics |
 | Vehicle traced | `veh_0358` (ramp vehicle): reaches the ramp at 472 s, waits 10 s, merges at 482 s at about 5 m/s into the slot that mainline vehicle `veh_0254` left by braking (zipper), then follows the IDM to the exit at 525 s. Show its row history in `trajectories.csv` and the ramp queue in `queues.csv` |
 | Test of partner's interface explained | detector recount: counts in `observations.csv` equal the vehicle crossings logged in `crossings.csv` (`audit_detector_counts` in `observation.py`) |
 
-## Ruopeng - boundaries, merge and observations
+## Ruopeng - boundaries and observations
 
 | | |
 |---|---|
-| Component | random arrivals, mainline entry, ramp storage and the merge rule (speed cap, merge braking limit, zipper), detectors, live view |
-| Code location | `src/cavsim/core.py`: `_demand_schedules`, `_process_arrivals`, `_insertion_is_safe`, `_merge_safe_decel`, `_zipper_leader`, `DetectorAccumulator`; `src/cavsim/observation.py`; `live_visualization/` |
+| Component | random arrivals, mainline entry, ramp storage, detectors, live view |
+| Code location | `src/cavsim/core.py`: `_demand_schedules`, `_process_arrivals`, `DetectorAccumulator`; `src/cavsim/observation.py`; `live_visualization/` |
 | Interface owned | Observation (`observations.csv`); control command (`control_commands.csv`) |
 | Tests owned | detector-recount part of `test_minimum_case_conservation_and_detector_audit`, `test_live_step_and_snapshot_interface`, ramp storage/overflow accounting, the control run without ramp traffic in `run_int1.py` |
 | Conclusion owned | Prediction 2: the merge is the bottleneck. Without ramp traffic no queue forms; with it, a mainline queue starts at the merge, spreads about 1 km back and clears after arrivals stop, while the zipper keeps the ramp queue at 7 or fewer |
-| Planned next tests | a zipper rule in which yielding vehicles slow down instead of stopping (the merge now loses 40% of its capacity); a detector defect test (missing intervals) |
+| Planned next tests | detectors inside the queue to measure where the stop-and-go waves start and how fast they travel back; a detector defect test (missing intervals) |
 | Vehicle traced | `veh_0010`, the braking platoon vehicle: brakes at -2.5 m/s² from 8 s to 12 s; show how the 8 vehicles behind it slow down less (`disturbance_speed_traces.png`) |
 | Test of partner's interface explained | vehicle conservation: generated = exited + vehicles still in the system or in a queue (`run()` metrics, `P7_conservation_ok`) |
 
