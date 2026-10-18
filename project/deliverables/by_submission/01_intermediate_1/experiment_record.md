@@ -261,3 +261,33 @@ overstates the capacity drop (not checked against data).
 on average, up to 8 times (from `trajectories.csv`). Each zipper yield makes a mainline vehicle stop at the merge,
 and the queue moves at about 12 km/h, inside the speed range where the linear stability check says IDM
 disturbances grow (about 4-72 km/h for T = 1.0 s), so these stops travel back through the queue instead of fading.
+
+## 10. Proposal experiment: time gap x ramp demand (predictions written before running)
+
+Written **2026-10-18 19:46 UTC**, before any of cases P1-P3, P5, P6 was run. P4 is the current model (Run 8).
+The same table is in the written proposal (Section 2, "Run 1-6").
+
+**Question.** Under what desired time gap and on-ramp demand does an on-ramp merge turn into a persistent mainline
+queue with stop-and-go waves?
+
+**Change.** The desired time gap T of every driver is 0.8, 1.0 or 1.2 s, and the ramp demand is 200 or 700 veh/h.
+Everything else is as in Run 8 (mainline 1,900 veh/h, Poisson arrivals with seed 281, zipper merge, 9 m/s² cap).
+
+**Reasoning.** Lane capacity C from the IDM equilibrium relation: 2,967 / 2,519 / 2,191 veh/h for T = 0.8 / 1.0 /
+1.2 s. A queue persists only when 1,900 + ramp demand > C, and then grows by at least (demand - C) vehicles per
+hour. The linear stability condition of the IDM gives string instability below 75 / 72 / 70 km/h for these T, so
+any queue (well below 70 km/h) should carry stop-and-go waves moving backward at about 15 km/h.
+
+| Case | T [s] | C [veh/h] | Ramp [veh/h] | Demand / C | Prediction |
+|---|---|---|---|---|---|
+| P1 | 0.8 | 2,970 | 200 | 71% | no persistent queue |
+| P2 | 0.8 | 2,970 | 700 | 88% | no persistent queue |
+| P3 | 1.0 | 2,520 | 200 | 83% | no persistent queue |
+| P4 | 1.0 | 2,520 | 700 | 103% | queue of at least 14 veh after 10 min; stop-and-go waves (already seen in Run 8) |
+| P5 | 1.2 | 2,190 | 200 | 96% | no persistent queue (closest to capacity) |
+| P6 | 1.2 | 2,190 | 700 | 119% | larger queue, at least 68 veh after 10 min; stop-and-go waves |
+
+A queue is **persistent** if mainline vehicles before the merge stay below 40 km/h for more than 2 min.
+**Supported** if queues form only in P4 and P6, P6's queue is larger, and both carry waves. **Challenged** if a
+queue forms in P5 or P2 (demand below capacity): the merging itself would then break the flow before capacity is
+reached. A queue without waves would challenge the stability argument.
