@@ -291,3 +291,30 @@ A queue is **persistent** if mainline vehicles before the merge stay below 40 km
 **Supported** if queues form only in P4 and P6, P6's queue is larger, and both carry waves. **Challenged** if a
 queue forms in P5 or P2 (demand below capacity): the merging itself would then break the flow before capacity is
 reached. A queue without waves would challenge the stability argument.
+
+**Results** (`python run_time_gap_sweep.py`, run on 2026-10-30; outputs in `outputs/time_gap_sweep/`). Seed 281 is
+the run the predictions were written for; seeds 282-285 repeat every case as a robustness check.
+
+| Case | Demand / C | Prediction | Seed 281 result | Seeds 281-285 |
+|---|---|---|---|---|
+| P1 | 71% | no persistent queue | none | none in 5 of 5 |
+| P2 | 88% | no persistent queue | none | **persistent queue in 1 of 5** (seed 284: 535 s below 40 km/h, 170 vehicles queued) |
+| P3 | 83% | no persistent queue | none | none in 5 of 5 |
+| P4 | 103% | queue, >= 14 waiting at 10 min, waves | queue; 99 waiting at 10 min; 3.6 stops per queued vehicle; waves -15.5 km/h | queue in 5 of 5 (mean 119 waiting at 10 min) |
+| P5 | 96% | no persistent queue (closest call) | none (short slowdowns only) | none in 5 of 5 |
+| P6 | 119% | larger queue, >= 68 waiting at 10 min, waves | larger queue; 170 waiting at 10 min; waves -16.0 km/h; **queue reached the road entrance at about 9.5 min and 33 vehicles were still on the road at 15 min** | queue in 5 of 5 (mean 163 waiting at 10 min) |
+
+Checks in all 30 runs: vehicle conservation holds, 0 overlaps, smallest gap 1.65 m, hardest braking 9.0 m/s² (the cap).
+
+**Interpretation.**
+- With the pre-registered seed, the capacity rule predicted all six outcomes, and every persistent queue carried
+  stop-and-go waves moving backward at 15-17 km/h (literature: about 15 km/h).
+- The rule is not sufficient: at 88% of capacity (P2) one of five random arrival sequences broke down at the merge
+  and the queue then persisted, because once the merge breaks down it passes only about 1,500 veh/h (capacity drop,
+  the zipper stops). Below capacity, a breakdown is therefore possible but not certain.
+- Queues are much larger than the Eq. (2) lower bounds (99 vs 14, 170 vs 68) for the same reason: the queue drains
+  at the discharge rate of about 1,470-1,540 veh/h, not at the capacity.
+- P6 hits the model boundary: its queue fills the whole 1.6 km before the merge and does not clear within 15 min,
+  so its queue size is limited by the road length. A longer road or run is needed to measure it.
+- At T = 1.2 s (P5, P6), short slow spots appear at the entrance (x = 0) at 2-4 min when random arrivals bunch:
+  an entrance artifact of Poisson arrivals near capacity, not a merge queue.
