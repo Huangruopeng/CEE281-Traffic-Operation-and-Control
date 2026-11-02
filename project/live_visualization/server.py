@@ -21,8 +21,18 @@ from cavsim.core import FreewaySimulation
 
 
 def all_scenarios(config: dict) -> list[dict]:
-    """The Intermediate 1 scenario (if defined) followed by the final-pathway experiments."""
-    return ([config["int1_scenario"]] if "int1_scenario" in config else []) + list(config["experiments"])
+    """The six proposal runs (time gap T x ramp demand, seed 281), built from the Intermediate 1 scenario."""
+    from run_time_gap_sweep import RUNS, capacity_vph
+
+    s = config["simulation"]
+    runs = []
+    for run, T, ramp in RUNS:
+        cap = capacity_vph(dict(config["human_idm"], desired_time_gap_s=T), s["vehicle_length_m"], s["free_speed_mps"])
+        demand = config["int1_scenario"]["mainline_demand_vph"] + ramp
+        runs.append(dict(config["int1_scenario"], scenario_id=f"run_{run}", desired_time_gap_s=T,
+                         ramp_demand_vph=ramp, capacity_vph=round(cap),
+                         label=f"Run {run} · T = {T} s · ramp {ramp:.0f} veh/h · demand {100 * demand / cap:.0f}% of capacity"))
+    return runs
 
 
 def scenario_label(scenario: dict) -> str:
@@ -43,7 +53,7 @@ class SimulationSession:
     def __init__(self, config: dict):
         self.config = config
         self.scenarios = {item["scenario_id"]: item for item in all_scenarios(config)}
-        self.scenario_id = config["int1_scenario"]["scenario_id"] if "int1_scenario" in config else "nominal_cacc_50"
+        self.scenario_id = "run_4"   # the run with the clearest stop-and-go waves
         self.speed = 1.0
         self.playing = False
         self.last_wall_s = time.monotonic()
@@ -58,7 +68,7 @@ class SimulationSession:
             meter_cfg["mode"] = scenario["meter_mode"]
         return FreewaySimulation(
             dict(self.config["simulation"]),
-            self.config["human_idm"],
+            dict(self.config["human_idm"], desired_time_gap_s=scenario["desired_time_gap_s"]),
             self.config["automated_controller"],
             meter_cfg,
             scenario,

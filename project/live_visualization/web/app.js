@@ -391,10 +391,11 @@ function renderDetectors() {
 function renderScenarioDetails() {
   const scenario = scenarios.get(state.scenario_id);
   if (!scenario) return;
+  const demand = scenario.mainline_demand_vph + scenario.ramp_demand_vph;
   const rows = [
-    ["Controller", scenario.controller.toUpperCase()], ["Penetration", `${Math.round(scenario.penetration * 100)}%`],
-    ["Demand", scenario.demand === "high" ? "High" : "Nominal"], ["Brake pulse", scenario.disturbance === "strong" ? "−3.5 m/s²" : "−2.5 m/s²"],
-    ["Communication delay", `${scenario.comm_delay_s.toFixed(2)} s`], ["Packet loss", `${Math.round(scenario.dropout_probability * 100)}%`],
+    ["Desired time gap T", `${scenario.desired_time_gap_s.toFixed(1)} s`], ["Capacity", `${scenario.capacity_vph} veh/h`],
+    ["Mainline demand", `${scenario.mainline_demand_vph} veh/h`], ["Ramp demand", `${scenario.ramp_demand_vph} veh/h`],
+    ["Demand / capacity", `${Math.round(100 * demand / scenario.capacity_vph)}%`], ["Drivers", "human (IDM), seed 281"],
   ];
   $("scenarioDetails").replaceChildren(...rows.map(([term, value]) => {
     const div = document.createElement("div"); div.innerHTML = `<dt>${term}</dt><dd>${value}</dd>`; return div;
