@@ -27,9 +27,9 @@ Ruopeng about 5 min (slides 2, 3, 6, 8, 9, 11, 13). Change the split freely.
 *(램프 합류가 언제 정체가 되는지 묻는 프로젝트. 시뮬레이션, 합류 규칙, 예측, 6개 실험 결과를 보여줄 것.)*
 
 **2. What changed since Intermediate 1 (Ruopeng)**
-> First, what changed after your feedback on Intermediate 1. You told us not to use an artificial bottleneck, so we removed the slow zone. Now the only bottleneck is the on-ramp merge itself. You also asked us to randomize the vehicles, so arrival times are now random, following a Poisson process with the same average rates. We kept the braking platoon in the simulation, but it is a separate check and not part of today’s question. Finally, the assignment asked for one focused question, so we combined our two earlier questions into one.
+> First, what changed after your feedback on Intermediate 1. You told us not to use an artificial bottleneck, so we removed the slow zone. Now the only bottleneck is the on-ramp merge itself. You also asked us to randomize the vehicles, so arrival times are now random, following a Poisson process with the same average rates. Finally, the assignment asked for one focused question, so we combined our two earlier questions into one.
 
-*(피드백 반영: 인공 병목 제거 → 합류가 유일한 병목, 도착 무작위화(Poisson), 급제동 차량 무리는 남겨 두었지만 오늘 질문과는 별개, 질문 하나로 합침.)*
+*(피드백 반영: 인공 병목 제거 → 합류가 유일한 병목, 도착 무작위화(Poisson), 질문 하나로 합침.)*
 
 **3. One road, one bottleneck (Ruopeng)**
 > This is our road: one lane, 2.5 kilometers. Mainline vehicles enter on the left at 1,900 vehicles per hour. Ramp vehicles join at 1.6 kilometers, at 200 or 700 vehicles per hour. Vehicles arrive for ten minutes, and we run for fifteen so that queues can clear. Ramp vehicles wait in a ramp queue that holds 35 vehicles; the ramp meter exists in the code but is off in all runs. Detectors D1 and D2, before and after the merge, report counts and speeds every 30 seconds. To check that the merge really is the cause, we ran the same case without ramp traffic, and no queue formed.
@@ -42,9 +42,17 @@ Ruopeng about 5 min (slides 2, 3, 6, 8, 9, 11, 13). Change the split freely.
 *(IDM 식 설명: 첫 항은 원하는 속도로 가속, 둘째 항은 간격이 원하는 간격보다 작으면 감속. 값은 교재 표 11.2 = 강의 04 p37. T가 실험 변수. 코드 위치, 0.1초 갱신, 가정.)*
 
 **5. Merge rule (Seunghun)**
-> The merge rule decides how a ramp vehicle gets in. In fast traffic, the ramp vehicle enters at its new leader’s speed, capped at 89 kilometers per hour, which is the merge speed the AASHTO Green Book gives for a 75 mile-per-hour highway. It may enter only if its new follower does not have to brake harder than a safe limit. This is the MOBIL safety criterion from Lecture 4, page 48. The limit is 4 meters per second squared at full speed and grows to 17 at standstill, because hard braking is less dangerous when slow. Below 40 kilometers per hour we added a zipper: the first mainline car within 100 meters stops behind the merge point and leaves one slot, and then they take turns. We needed this because gaps in a queue are about 7.5 meters, shorter than the 9 meters a ramp car needs, so without it no ramp car could enter a jam; in a test run the ramp queue grew to 30 vehicles. Finally, no vehicle brakes harder than 9 meters per second squared. In the code these are the three functions at the bottom of the slide.
+> Our merge rule has two modes, split at 40 kilometers per hour.
+>
+> Above 40, on the left: a ramp car enters a gap only if the car behind it needs to brake less than 4 meters per second squared. This limit grows as traffic slows, up to 17 when stopped, because braking hard at low speed isn’t very dangerous. If the gap fails, the ramp car waits.
+>
+> Below 40, on the right: cars in a queue are only about 7.5 meters apart, but a ramp car needs 9 meters, 5 for the car and 2 in front and behind. So it could never get in. So we use a zipper: the first mainline car within 100 meters stops before the merge point, one ramp car goes in, then one mainline car, and so on.
+>
+> Two more numbers. A ramp car enters at the speed of the car ahead, but at most 89 kilometers per hour, because the ramp is short. And no car brakes harder than 9 meters per second squared, about the limit of a real car.
+>
+> These rules come from the MOBIL model in our textbook and Lecture 4, and the AASHTO design guide.
 
-*(합류 규칙 4가지: (a) 89 km/h 상한, (b) 뒤차 감속 한도 4→17 (MOBIL, 강의 04 p48), (c) 40 km/h 아래 지퍼 — 정체 속 틈 7.5 m < 필요 9 m라서 필요, (d) 브레이크 9 m/s² 상한.)*
+*(두 모드, 기준 40 km/h. 40 이상: 뒤차가 4 m/s² 미만으로 감속하면 되는 틈일 때만 진입(멈춰 있으면 17까지 허용), 아니면 대기. 40 미만: 정체 간격 7.5 m < 필요 9 m(5 + 2 + 2)라 못 들어감 → 지퍼(100 m 안 첫 본선 차가 멈추고 한 대씩 번갈아). 진입 속도는 앞차 속도, 최대 89 km/h. 최대 제동 9 m/s². 출처는 마지막에 한 번.)*
 
 **6. Checks (Ruopeng)**
 > Before trusting the results we ran these checks. Every vehicle that enters is accounted for, whether it has exited, is still on the road, or is waiting, in all 30 runs. Unit tests check free motion on an empty road and the equilibrium gap in steady traffic. The detector counts match an independent recount of individual vehicle crossings. Halving or doubling the time step changes the total delay by less than four percent. We count collisions instead of preventing them, and there were none; the smallest gap was 1.65 meters. And when we remove ramp traffic, there is no queue, so the merge is the cause.
