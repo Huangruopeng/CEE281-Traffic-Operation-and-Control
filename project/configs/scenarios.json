@@ -8,31 +8,17 @@
     ],
     "detector_interval_s": 30.0,
     "vehicle_length_m": 5.0,
-    "minimum_physical_gap_m": 2.0,
     "dt_s": 0.1,
-    "control_update_s": 0.1,
     "duration_s": 900.0,
     "demand_end_s": 600.0,
     "log_interval_s": 0.5,
-    "initial_platoon_size": 12,
-    "initial_spacing_m": 45.0,
-    "initial_speed_mps": 22.0,
-    "disturbance_time_s": 8.0,
-    "disturbance_duration_s": 4.0,
-    "disturbance_decel_mps2": -2.5,
-    "strong_disturbance_decel_mps2": -3.5,
     "free_speed_mps": 33.33,
     "merge_safe_decel_mps2": 4.0,
     "merge_safe_decel_standstill_mps2": 17.0,
     "merge_speed_max_mps": 24.6,
     "zipper_speed_mps": 11.11,
     "max_braking_mps2": 9.0,
-    "mainline_demand_vph": 1500.0,
-    "ramp_demand_vph": 360.0,
-    "high_mainline_demand_vph": 1740.0,
-    "high_ramp_demand_vph": 480.0,
-    "seed": 281,
-    "log_all_vehicles": false
+    "seed": 281
   },
   "human_idm": {
     "desired_time_gap_s": 1.0,
@@ -41,20 +27,11 @@
     "comfortable_decel_mps2": 1.5,
     "accel_exponent": 4.0
   },
-  "automated_controller": {
-    "desired_time_gap_s": 1.1,
-    "standstill_gap_m": 2.0,
-    "kp_per_s2": 0.2,
-    "kd_per_s": 0.7,
-    "speed_gain_per_s": 0.35,
-    "feedforward_gain": 0.8,
-    "maximum_accel_mps2": 2.0,
-    "maximum_brake_mps2": -4.0,
-    "actuation_time_constant_s": 0.5,
-    "message_stale_after_s": 1.0
+  "cav": {
+    "desired_time_gap_s": 0.6
   },
   "ramp_meter": {
-    "mode": "feedback",
+    "mode": "unmetered",
     "fixed_rate_vph": 480.0,
     "initial_rate_vph": 540.0,
     "minimum_rate_vph": 240.0,
@@ -64,19 +41,11 @@
     "queue_override_vehicles": 25,
     "storage_vehicles": 35
   },
-  "int1_scenario": {"scenario_id": "int1_minimum", "label": "Intermediate 1 · human drivers only · ramp meter control off", "mainline_demand_vph": 1900.0, "ramp_demand_vph": 700.0, "arrival_process": "poisson", "controller": "human", "penetration": 0.0, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0, "meter_mode": "unmetered"},
-  "experiments": [
-    {"scenario_id": "nominal_human", "controller": "human", "penetration": 0.0, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0},
-    {"scenario_id": "nominal_acc_50", "controller": "acc", "penetration": 0.5, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0},
-    {"scenario_id": "nominal_acc_100", "controller": "acc", "penetration": 1.0, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0},
-    {"scenario_id": "nominal_cacc_50", "controller": "cacc", "penetration": 0.5, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.15, "dropout_probability": 0.0},
-    {"scenario_id": "nominal_cacc_100", "controller": "cacc", "penetration": 1.0, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.15, "dropout_probability": 0.0},
-    {"scenario_id": "degraded_cacc_50", "controller": "cacc", "penetration": 0.5, "demand": "nominal", "disturbance": "nominal", "comm_delay_s": 0.8, "dropout_probability": 0.3},
-    {"scenario_id": "high_demand_human", "controller": "human", "penetration": 0.0, "demand": "high", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0},
-    {"scenario_id": "high_demand_acc_50", "controller": "acc", "penetration": 0.5, "demand": "high", "disturbance": "nominal", "comm_delay_s": 0.0, "dropout_probability": 0.0},
-    {"scenario_id": "high_demand_cacc_50", "controller": "cacc", "penetration": 0.5, "demand": "high", "disturbance": "nominal", "comm_delay_s": 0.15, "dropout_probability": 0.0},
-    {"scenario_id": "strong_brake_human", "controller": "human", "penetration": 0.0, "demand": "nominal", "disturbance": "strong", "comm_delay_s": 0.0, "dropout_probability": 0.0},
-    {"scenario_id": "strong_brake_acc_50", "controller": "acc", "penetration": 0.5, "demand": "nominal", "disturbance": "strong", "comm_delay_s": 0.0, "dropout_probability": 0.0},
-    {"scenario_id": "strong_brake_cacc_50", "controller": "cacc", "penetration": 0.5, "demand": "nominal", "disturbance": "strong", "comm_delay_s": 0.15, "dropout_probability": 0.0}
-  ]
+  "base_scenario": {
+    "scenario_id": "base",
+    "mainline_demand_vph": 1900.0,
+    "ramp_demand_vph": 700.0,
+    "penetration": 0.0,
+    "meter_mode": "unmetered"
+  }
 }

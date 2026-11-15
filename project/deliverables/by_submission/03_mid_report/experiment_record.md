@@ -48,3 +48,36 @@ quadratically with market penetration).
    15 km/h, with a similar number of stops per queued vehicle, because the zipper (full stops) is unchanged. CAVs
    should lower the chance of a breakdown more than its severity.
 4. No collisions (0 overlap steps) at any CAV share.
+
+## 3. Results (2026-11-15, 20 seeds per case; `run_time_gap_sweep.py`, `run_cav_sweep.py`)
+
+Human drivers only (D1 definition): share of runs congested = 0% (Run 1, 71% of C), 15% (Run 2, 88%), 0% (Run 3,
+83%), 95% (Run 4, 103%), 0% (Run 5, 96%), 100% (Run 6, 119%). Seed 281 gives the same verdicts as in October
+(Run 4: 99 vehicles waiting at 10 min). No collisions in 120 runs.
+
+CAV share sweep, share of runs congested [%]:
+
+| p | 0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| human T = 1.0 s | 95 | 90 | 90 | 75 | 80 | 30 | 20 | 15 | 10 | 5 | 5 |
+| human T = 1.2 s | 100 | 100 | 100 | 100 | 100 | 100 | 80 | 30 | 15 | 10 | 5 |
+
+- Vehicles waiting at 10 min (human T = 1.0 s): 102 at p = 0, 31 at p = 0.5, 8 at p = 1.0 (means over seeds).
+- When a run is congested, the merge passes 1,470-1,670 veh/h at every p: the zipper's full stops, not the time
+  gap, set the discharge.
+- Stops per queued vehicle in congested runs rise with p: 4.1 (p = 0) to 6-8 (p >= 0.8) for human T = 1.0 s;
+  1.4 to 6.2 for 1.2 s. Wave speed 14-17 km/h backward at every p.
+- The congested runs at p >= 0.8 are seeds 284, 289 and 299. Seed 284 has a burst of 24 ramp arrivals in one minute
+  (170-230 s; the mean is 11.7), just before the breakdown.
+- No collisions in 440 runs; smallest gap 1.50 m (1.77 m without CAVs). Time step 0.05/0.2 s changes the base
+  delay by -2.6%/+3.8% (`run_checks.py`).
+
+Against the predictions:
+
+1. Held in part. Congestion stays in 75-95% of runs while demand is at least 98% of C(p) (p <= 0.4) and drops
+   steeply between p = 0.4 and 0.5. But it does not vanish: 5-10% of runs still break down at 72-83% of capacity.
+2. Held up to p = 0.5 (100%) and 0.6 (80%); not zero at p = 1.0 (5%).
+3. Wave speed held; the number of stops did not. With many CAVs, a queue that does form is more stop-and-go.
+   Likely cause: the IDM becomes less stable as T shrinks, and our CAV model has no acceleration feedforward,
+   which real CACC uses to stay string stable.
+4. Held.

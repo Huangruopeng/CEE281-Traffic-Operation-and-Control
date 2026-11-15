@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dependency-free local server for the CAV freeway live visualizer."""
+"""Dependency-free local server for the live view of the freeway merge simulation."""
 
 from __future__ import annotations
 
@@ -21,32 +21,22 @@ from cavsim.core import FreewaySimulation
 
 
 def all_scenarios(config: dict) -> list[dict]:
-    """The six proposal runs (time gap T x ramp demand, seed 281), built from the Intermediate 1 scenario."""
-    from run_time_gap_sweep import RUNS, capacity_vph
+    """The six human runs (time gap T x ramp demand) and Run 4 with 50% and 100% CAVs, all with seed 281."""
+    from cavsim.metrics import capacity_vph
 
     s = config["simulation"]
+    cases = [(f"run_{n}", f"Run {n}", T, ramp, 0.0) for n, T, ramp in
+             [(1, 0.8, 200.0), (2, 0.8, 700.0), (3, 1.0, 200.0), (4, 1.0, 700.0), (5, 1.2, 200.0), (6, 1.2, 700.0)]]
+    cases += [("run_4_cav50", "Run 4 + 50% CAV", 1.0, 700.0, 0.5), ("run_4_cav100", "Run 4 + 100% CAV", 1.0, 700.0, 1.0)]
     runs = []
-    for run, T, ramp in RUNS:
-        cap = capacity_vph(dict(config["human_idm"], desired_time_gap_s=T), s["vehicle_length_m"], s["free_speed_mps"])
-        demand = config["int1_scenario"]["mainline_demand_vph"] + ramp
-        runs.append(dict(config["int1_scenario"], scenario_id=f"run_{run}", desired_time_gap_s=T,
-                         ramp_demand_vph=ramp, capacity_vph=round(cap),
-                         label=f"Run {run} · T = {T} s · ramp {ramp:.0f} veh/h · demand {100 * demand / cap:.0f}% of capacity"))
+    for scenario_id, name, T, ramp, p in cases:
+        cap = capacity_vph(dict(config["human_idm"], desired_time_gap_s=T), s["vehicle_length_m"], s["free_speed_mps"],
+                           p, config["cav"]["desired_time_gap_s"])
+        demand = config["base_scenario"]["mainline_demand_vph"] + ramp
+        runs.append(dict(config["base_scenario"], scenario_id=scenario_id, desired_time_gap_s=T, ramp_demand_vph=ramp,
+                         penetration=p, capacity_vph=round(cap),
+                         label=f"{name} · T = {T} s · ramp {ramp:.0f} veh/h · demand {100 * demand / cap:.0f}% of capacity"))
     return runs
-
-
-def scenario_label(scenario: dict) -> str:
-    if "label" in scenario:
-        return scenario["label"]
-    controller = scenario["controller"].upper()
-    penetration = int(round(100 * float(scenario["penetration"])))
-    demand = "High demand" if scenario["demand"] == "high" else "Nominal demand"
-    suffix = ""
-    if scenario["scenario_id"].startswith("degraded"):
-        suffix = " · degraded V2V"
-    elif scenario["disturbance"] == "strong":
-        suffix = " · strong brake"
-    return f"{demand} · {controller} {penetration}%{suffix}"
 
 
 class SimulationSession:
@@ -63,14 +53,11 @@ class SimulationSession:
 
     def _new_sim(self, scenario_id: str) -> FreewaySimulation:
         scenario = dict(self.scenarios[scenario_id])
-        meter_cfg = dict(self.config["ramp_meter"])
-        if "meter_mode" in scenario:
-            meter_cfg["mode"] = scenario["meter_mode"]
         return FreewaySimulation(
             dict(self.config["simulation"]),
             dict(self.config["human_idm"], desired_time_gap_s=scenario["desired_time_gap_s"]),
-            self.config["automated_controller"],
-            meter_cfg,
+            self.config["cav"],
+            self.config["ramp_meter"],
             scenario,
         )
 
@@ -174,12 +161,12 @@ class AppHandler(SimpleHTTPRequestHandler):
             scenarios = []
             for item in all_scenarios(self.session.config):
                 record = dict(item)
-                record["label"] = scenario_label(item)
+                record["label"] = item["label"]
                 scenarios.append(record)
             self._json({
                 "scenarios": scenarios,
                 "simulation": self.session.config["simulation"],
-                "controller": self.session.config["automated_controller"],
+                "cav": self.session.config["cav"],
             })
             return
         if self.path == "/api/state":

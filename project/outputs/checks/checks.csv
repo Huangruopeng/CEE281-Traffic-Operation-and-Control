@@ -1,0 +1,8 @@
+check,dt_s,detector_count_error_veh,penetration,ramp_vph,congested,d1_slow_intervals,waiting_at_10min_veh,total_delay_veh_h,conservation_ok,overlap_steps,minimum_gap_m
+no ramp traffic,0.1,0,0.0,0.0,False,0,0,1.1559488344777995,True,0,13.879909382000246
+base (Run 4),0.1,0,0.0,700.0,True,10,99,8.444500543308145,True,0,1.7720813757111955
+"base, dt 0.05 s",0.05,0,0.0,700.0,True,9,96,8.230363839889232,True,0,1.7649597823467502
+"base, dt 0.2 s",0.2,0,0.0,700.0,True,9,103,8.766120753814324,True,0,1.785652647559914
+50% CAV,0.1,0,0.5,700.0,False,0,0,1.6614454076970726,True,0,2.3353395507697314
+"50% CAV, dt 0.05 s",0.05,0,0.5,700.0,False,0,0,1.6423391953574809,True,0,2.108573531061893
+"50% CAV, dt 0.2 s",0.2,0,0.5,700.0,False,0,0,1.6723962501674214,True,0,2.4831209723533902

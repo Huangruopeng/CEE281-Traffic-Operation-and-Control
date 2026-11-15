@@ -1,7 +1,0 @@
-run,seed,T_s,ramp_vph,demand_vph,capacity_vph,demand_over_capacity_pct,persistent_queue,longest_congested_s,congested_from_s,congested_to_s,waiting_at_10min_veh,mainline_queued_at_10min,ramp_queue_at_10min,max_mainline_queued_veh,queue_tail_min_x_m,max_ramp_queue_veh,ramp_overflow_veh,merge_discharge_vph,stops_per_queued_vehicle,wave_speed_kmh,last_slow_s,unfinished_veh,conservation_ok,overlap_steps,minimum_gap_m,hardest_braking_mps2,total_delay_veh_h
-1,281,0.8,200.0,2100.0,2967,70.8,False,0.0,,,1,0,1,0,,6,0,,0.0,,,0,True,0,2.6966361965585293,-8.068994577255575,0.9656741913954571
-2,281,0.8,700.0,2600.0,2967,87.6,False,0.0,,,6,0,6,0,,6,0,,0.0,,,0,True,0,2.252801572961289,-8.020482310510044,1.4669594746498311
-3,281,1.0,200.0,2100.0,2519,83.4,False,0.0,,,0,0,0,0,,2,0,,0.0,,,0,True,0,2.3654357811481077,-6.811166392330417,1.4262074898209582
-4,281,1.0,700.0,2600.0,2519,103.2,True,326.0,345.0,670.5,99,98,1,103,608.3336397690412,7,0,1536.0,3.5886524822695036,-15.5,772.0,0,True,0,1.772081515490754,-9.0,8.559688654021345
-5,281,1.2,200.0,2100.0,2191,95.8,False,0.0,,,0,0,0,4,0.0,2,0,,0.0,,384.5,0,True,0,2.9932173916320153,-6.7154866851923884,2.353285194798394
-6,281,1.2,700.0,2600.0,2191,118.6,True,505.0,206.0,710.5,170,164,6,165,0.0,11,0,1470.0,1.4529411764705882,-16.0,860.5,33,True,0,1.8701895229103798,-9.0,18.838519618244884

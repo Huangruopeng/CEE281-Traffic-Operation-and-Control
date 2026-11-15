@@ -139,7 +139,7 @@ input[type="range"] { width: 100%; accent-color: var(--cyan); cursor: pointer; }
 .controller-badge { border: 1px solid var(--line); border-radius: 3px; padding: 5px 7px; color: var(--muted); font: 700 9px ui-monospace, monospace; letter-spacing: .08em; }
 .controller-badge.human { border-color: rgba(152,168,179,.35); color: var(--human); }
 .controller-badge.acc { border-color: rgba(240,183,99,.4); color: var(--amber); }
-.controller-badge.cacc { border-color: rgba(84,214,218,.4); color: var(--cyan); }
+.controller-badge.cacc, .controller-badge.cav { border-color: rgba(84,214,218,.4); color: var(--cyan); }
 .empty-state { min-height: 205px; padding: 30px; display: grid; place-items: center; align-content: center; text-align: center; color: var(--muted); }
 .empty-state p { max-width: 220px; margin: 14px 0 0; font-size: 12px; line-height: 1.65; }
 .target-icon { width: 42px; height: 42px; display: grid; place-items: center; border: 1px dashed rgba(84,214,218,.42); border-radius: 50%; color: var(--cyan); font-size: 20px; }

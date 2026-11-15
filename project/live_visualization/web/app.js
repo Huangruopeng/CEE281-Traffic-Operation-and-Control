@@ -25,7 +25,7 @@ let cameraCenterM = null;
 let cameraDrag = null;
 let suppressRoadClick = false;
 
-const colors = { human: "#98a8b3", acc: "#f0b763", cacc: "#54d6da", coral: "#ff756f", grid: "rgba(137,164,179,.10)" };
+const colors = { human: "#98a8b3", acc: "#f0b763", cacc: "#54d6da", cav: "#54d6da", coral: "#ff756f", grid: "rgba(137,164,179,.10)" };
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -262,7 +262,7 @@ function drawRoad() {
 
   for (let i = 0; i < sorted.length - 1; i++) {
     const follower = sorted[i], leader = sorted[i + 1];
-    if (follower.controller === "cacc" && follower.message_valid && leader.x_m - follower.x_m < 190) {
+    if (follower.controller === "cav" && follower.message_valid && leader.x_m - follower.x_m < 190) {
       const followerPoint = visualPositions.get(follower.vehicle_id), leaderPoint = visualPositions.get(leader.vehicle_id);
       ctx.strokeStyle = "rgba(84,214,218,.36)"; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
       ctx.beginPath(); ctx.moveTo(followerPoint.x, followerPoint.y - 11); ctx.lineTo(leaderPoint.x, leaderPoint.y - 11); ctx.stroke(); ctx.setLineDash([]);
@@ -274,13 +274,13 @@ function drawRoad() {
     const visual = visualPositions.get(vehicle.vehicle_id);
     const x = visual.x, y = visual.y;
     if (x < left - 12 || x > right + 12) continue;
-    // Every active vehicle uses one fixed, normal-size body. Disturbance and
-    // braking states are communicated with outlines/lights, never by resizing.
+    // Every active vehicle uses one fixed, normal-size body. Braking
+    // is shown with outlines/lights, never by resizing.
     const carW = 10;
     const carH = 8;
     const color = colors[vehicle.controller] || colors.human;
     ctx.save(); ctx.translate(x, y); ctx.rotate(visual.angle);
-    if (vehicle.hard_braking || vehicle.is_disturbance_vehicle) {
+    if (vehicle.hard_braking) {
       ctx.shadowColor = colors.coral; ctx.shadowBlur = 11;
       ctx.strokeStyle = colors.coral; ctx.lineWidth = 2;
       roundedRect(ctx, -carW / 2 - 2, -carH / 2 - 2, carW + 4, carH + 4, 3); ctx.stroke();
@@ -289,7 +289,7 @@ function drawRoad() {
     ctx.fillStyle = color;
     roundedRect(ctx, -carW / 2, -carH / 2, carW, carH, 2); ctx.fill();
     ctx.fillStyle = "rgba(5,13,18,.72)"; ctx.fillRect(carW / 2 - 2, -carH / 2 + 2, 1, carH - 4);
-    if (vehicle.equipped) { ctx.fillStyle = "#f1fbff"; ctx.beginPath(); ctx.arc(-1, 0, 1.1, 0, Math.PI * 2); ctx.fill(); }
+    if (vehicle.controller === "cav") { ctx.fillStyle = "#f1fbff"; ctx.beginPath(); ctx.arc(-1, 0, 1.1, 0, Math.PI * 2); ctx.fill(); }
     if (vehicle.acceleration_mps2 < -.15) {
       ctx.fillStyle = "#ff4d48";
       ctx.shadowColor = "#ff4d48"; ctx.shadowBlur = 5;
@@ -305,10 +305,6 @@ function drawRoad() {
     hitboxes.push({ x: x - 9, y: y - 10, w: 18, h: 20, vehicle });
   }
 
-  if (state.disturbance.active) {
-    ctx.fillStyle = "rgba(255,117,111,.9)"; ctx.font = "700 9px ui-monospace, monospace"; ctx.textAlign = "left";
-    ctx.fillText("● LEAD-VEHICLE BRAKE ACTIVE", left + 3, 24);
-  }
   ctx.textAlign = "right"; ctx.fillStyle = "rgba(148,169,181,.55)"; ctx.font = "9px ui-monospace, monospace";
   ctx.fillText(`${state.vehicles.length} ACTIVE · ${fmt(state.metrics.mean_speed_mps * 3.6, 1)} km/h`, right, 24);
   ctx.textAlign = "left";
@@ -372,9 +368,8 @@ function updateInspector() {
   $("inspectorSpeed").textContent = `${fmt(vehicle.speed_mps * 3.6, 1)} km/h`;
   $("inspectorAccel").textContent = `${vehicle.acceleration_mps2 >= 0 ? "+" : ""}${fmt(vehicle.acceleration_mps2, 2)} m/s²`;
   $("inspectorGap").textContent = vehicle.gap_m === null ? "open road" : `${fmt(vehicle.gap_m, 1)} m`;
-  $("inspectorCommand").textContent = `${vehicle.command_mps2 >= 0 ? "+" : ""}${fmt(vehicle.command_mps2, 2)} m/s²`;
   $("inspectorState").textContent = vehicle.control_state;
-  $("inspectorMessage").textContent = vehicle.controller !== "cacc" ? "not used" : vehicle.message_valid ? `valid · ${fmt(vehicle.message_age_s, 2)} s` : "fallback / unavailable";
+  $("inspectorMessage").textContent = vehicle.controller !== "cav" ? "not used" : vehicle.message_valid ? "from the CAV ahead" : "none (vehicle ahead is not a CAV)";
 }
 
 function renderDetectors() {
@@ -395,7 +390,8 @@ function renderScenarioDetails() {
   const rows = [
     ["Desired time gap T", `${scenario.desired_time_gap_s.toFixed(1)} s`], ["Capacity", `${scenario.capacity_vph} veh/h`],
     ["Mainline demand", `${scenario.mainline_demand_vph} veh/h`], ["Ramp demand", `${scenario.ramp_demand_vph} veh/h`],
-    ["Demand / capacity", `${Math.round(100 * demand / scenario.capacity_vph)}%`], ["Drivers", "human (IDM), seed 281"],
+    ["CAV share", `${Math.round(100 * scenario.penetration)}%`],
+    ["Demand / capacity", `${Math.round(100 * demand / scenario.capacity_vph)}%`], ["Seed", "281"],
   ];
   $("scenarioDetails").replaceChildren(...rows.map(([term, value]) => {
     const div = document.createElement("div"); div.innerHTML = `<dt>${term}</dt><dd>${value}</dd>`; return div;
@@ -414,11 +410,9 @@ function renderState(nextState) {
   $("meanSpeed").textContent = fmt(metrics.mean_speed_mps * 3.6, 1); $("vehicleCount").textContent = `${metrics.active_vehicles} active vehicles`;
   $("throughput").textContent = Math.round(metrics.throughput_veh_h).toLocaleString(); $("exitedCount").textContent = `${metrics.exited_vehicles} vehicles exited`;
   $("delay").textContent = fmt(metrics.total_delay_veh_h, 2); $("queueCount").textContent = `Boundary queue: ${state.queues.mainline + state.queues.ramp} vehicles`;
-  $("minGap").textContent = fmt(metrics.minimum_gap_m, 1); $("brakeCount").textContent = `${metrics.hard_brake_events} hard brakes · ${metrics.safety_interventions} safety overrides`;
+  $("minGap").textContent = fmt(metrics.minimum_gap_m, 1); $("brakeCount").textContent = `hardest braking ${fmt(metrics.hardest_braking_mps2, 1)} m/s²`;
   $("meterRate").textContent = `${Math.round(metrics.meter_rate_vph)} veh/h`; $("rampQueue").textContent = `queue ${state.queues.ramp}`;
   $("chartSpeedNow").textContent = `${fmt(metrics.mean_speed_mps * 3.6, 1)} km/h`; $("chartQueueNow").textContent = `${state.queues.mainline + state.queues.ramp} veh`;
-  const disturbance = $("disturbanceState"); disturbance.classList.toggle("active", state.disturbance.active);
-  disturbance.querySelector("span").textContent = state.disturbance.active ? `Lead-vehicle brake active · ${state.disturbance.vehicle_id}` : state.time_s < state.disturbance.start_s ? `Disturbance begins at ${fmt(state.disturbance.start_s, 1)} s` : "Disturbance complete";
   els.scenario.value = state.scenario_id;
   renderScenarioDetails(); renderDetectors(); updateInspector(); drawRoad(); updateHistory();
 }
