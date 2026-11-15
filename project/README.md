@@ -33,6 +33,21 @@ From this folder (each step takes seconds on a many-core machine and a few minut
 
 `all_seeds.csv` has one row per run; `seed_means.csv` has means over seeds with 95% confidence intervals.
 
+### Where each figure and table of the mid-report comes from
+
+| Report item | Source |
+|---|---|
+| Fig. 1 (road), Fig. 4 (merge rule) | drawings of the model, no simulation output |
+| Fig. 2 (capacity vs. CAV share) | `make_report_figures.py` -> `capacity_vs_cav_share.png` (Eq. 2, no runs needed) |
+| Fig. 3 (detector D1) | `make_report_figures.py` -> `detector_d1.png` |
+| Fig. 5 (Runs 1-6), Fig. 6 (waves) | `run_time_gap_sweep.py`, then `make_report_figures.py` -> `six_runs_human.png`, `waves_run4.png` |
+| Fig. 7 (CAV sweep), Fig. 8 (CAV runs) | `run_cav_sweep.py`, then `make_report_figures.py` -> `cav_sweep_results.png`, `time_space_cav.png` |
+| Fig. 9 (ramp metering), Fig. 10 (one TMC run) | `run_tmc.py`, then `make_report_figures.py` -> `tmc_results.png`, `tmc_trace.png` |
+| Table 1 (parameters) | `configs/scenarios.json` |
+| Table 2 (verification) | `run_checks.py` -> `outputs/checks/checks.csv` |
+| Table 3 (congested share by CAV share) | `run_cav_sweep.py` -> `outputs/cav_sweep/seed_means.csv` |
+| Numbers in Sections 3.2 and 3.4 | `outputs/time_gap_sweep/seed_means.csv`, `outputs/tmc/seed_means.csv` |
+
 ## Live view
 
 ```bash
