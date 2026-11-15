@@ -2,7 +2,7 @@
 
 Deck: https://claude.ai/artifact/Y5WnGvAuMQDzxTKs1rzTb4 (the same text is in each slide's speaker notes).
 The slides follow the mid-report: 1 introduction (slides 2-3), 2 model (4-7), 3 results (8-11), 4-5 open problems
-and next tests (12). Slides 1-12 are the talk (about 8:00 at 150 words per minute: Seunghun about 4:10,
+and next tests (12). Slides 1-12 are the talk (about 7:50 at 150 words per minute: Seunghun about 4:00,
 Ruopeng about 3:50, plus a 1-min live demo); slides 13-21 are backup for questions.
 
 Live demo: `python run_live.py --port 8781`, open http://127.0.0.1:8781. Run 4, no meter, jump to 7 min (D1 congested
@@ -21,7 +21,7 @@ since 6:30, about 100 cars waiting); then ramp meter ALINEA 13% and jump again (
 | 9 | CAVs cut congestion from about half the vehicles on | Seunghun | 0:50 |
 | 10 | Even 100% CAVs can become congested after a burst of arrivals | Seunghun | 0:30 |
 | 11 | Metering helps above capacity, if the target is low enough | Ruopeng | 0:50 + 1:00 demo |
-| 12 | Open problems, next tests, and who did what | Seunghun | 0:55 |
+| 12 | Open problems, next tests, and who did what | Seunghun | 0:45 |
 | 13 | Backup: the congestion rule at D1 | backup | - |
 | 14 | Backup: IDM parameters | backup | - |
 | 15 | Backup: TMC settings | backup | - |
@@ -70,4 +70,4 @@ since 6:30, about 100 cars waiting); then ramp meter ALINEA 13% and jump again (
 > [Live demo, about 1 min: Run 4, no meter, jump to 7 min: D1 says congested since 6:30 and about 100 cars wait. Switch the meter to ALINEA 13% and jump again: no congestion; the cars wait on the ramp instead (about 27).]
 
 **12. Open problems, next tests, and who did what (Seunghun)**
-> Four open problems and our next tests. First, zipper cars stop completely, so a congested merge passes only about 1,500 vehicles per hour, even with all CAVs; we will let them slow down instead and let CAVs open a gap. Second, our CAVs do not use the acceleration of the car ahead, as real CACC does, which likely explains the extra stops. Third, our results depend a lot on how often a waiting ramp driver checks the gap, so we will base it on reaction times. Fourth, a few settings still need checking, such as the ALINEA target, which we will choose again on new seeds. I built the vehicle model, the merge rule and the CAVs; Ruopeng built the arrivals, the detectors, the TMC and the live view, and ran the human-driver runs and the checks. Thank you.
+> Three open problems and our next tests. First, zipper cars stop completely, so a congested merge passes only about 1,500 vehicles per hour, even with all CAVs; we will let them slow down instead and let CAVs open a gap. Second, our CAVs do not use the acceleration of the car ahead, as real CACC does, which likely explains the extra stops. Third, our results depend a lot on how often a waiting ramp driver checks the gap, so we will base it on reaction times. I built the vehicle model, the merge rule and the CAVs; Ruopeng built the arrivals, the detectors, the TMC and the live view, and ran the human-driver runs and the checks. Thank you.
