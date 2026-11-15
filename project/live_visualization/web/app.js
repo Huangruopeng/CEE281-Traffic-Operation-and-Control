@@ -2,20 +2,18 @@
 
 const $ = (id) => document.getElementById(id);
 const els = {
-  scenario: $("scenarioSelect"), speed: $("speedSelect"), play: $("playBtn"), playIcon: $("playIcon"),
+  run: $("runSelect"), cav: $("cavSelect"), meter: $("meterSelect"), seed: $("seedSelect"), speed: $("speedSelect"), play: $("playBtn"), playIcon: $("playIcon"),
   playLabel: $("playLabel"), reset: $("resetBtn"), step: $("stepBtn"), record: $("recordBtn"),
   timeline: $("timeline"), timelineCurrent: $("timelineCurrent"), timelineEnd: $("timelineEnd"), live: $("liveBtn"),
-  road: $("roadCanvas"), speedChart: $("speedChart"), queueChart: $("queueChart"), tip: $("hoverTip"),
+  road: $("roadCanvas"), speedChart: $("speedChart"), meterChart: $("meterChart"), queueChart: $("queueChart"), tip: $("hoverTip"),
   panLeft: $("panLeftBtn"), panRight: $("panRightBtn"), centerMerge: $("centerMergeBtn"),
   simClock: $("simClock"), connection: $("connectionStatus"), liveDot: $("liveDot"), toast: $("toast"),
 };
 
 let config = null;
-let scenarios = new Map();
 let state = null;
 let selectedVehicleId = null;
 let hitboxes = [];
-let history = [];
 let requestInFlight = false;
 let timelineDragging = false;
 let recorder = null;
@@ -221,8 +219,9 @@ function drawRoad() {
     const meterX = meterPoint.x, meterY = meterPoint.y;
     ctx.fillStyle = "#8a7ce3"; ctx.fillRect(meterX, meterY - 18, 2, 20);
     ctx.beginPath(); ctx.arc(meterX + 1, meterY - 19, 4, 0, Math.PI * 2);
-    ctx.fillStyle = state.queues.ramp ? "#ff756f" : "#54d6da"; ctx.fill();
-    ctx.textAlign = "left"; ctx.fillStyle = "rgba(174,191,200,.65)"; ctx.font = "8px ui-monospace, monospace"; ctx.fillText("R1 METER", meterX + 8, meterY - 16);
+    ctx.fillStyle = !state.tmc.metered ? "#5b6b75" : state.tmc.green ? "#58d68d" : "#ff756f"; ctx.fill();
+    ctx.textAlign = "left"; ctx.fillStyle = "rgba(174,191,200,.65)"; ctx.font = "8px ui-monospace, monospace";
+    ctx.fillText(state.tmc.metered ? `METER ${Math.round(state.tmc.rate_vph)} veh/h` : "NO METER", meterX + 8, meterY - 16);
 
     ctx.strokeStyle = "rgba(240,183,99,.45)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(rampMerge - 8, roadY + 22); ctx.lineTo(rampMerge + 12, roadY + 8); ctx.stroke();
@@ -310,46 +309,59 @@ function drawRoad() {
   ctx.textAlign = "left";
 }
 
-function drawChart(canvas, values, color, maxValue, suffix) {
+function drawChart(canvas, series, { maxValue, duration, threshold = null, emptyText = null, suffix = "" }) {
   const { ctx, width: w, height: h } = resizeCanvas(canvas);
   ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#0a141c"; ctx.fillRect(0, 0, w, h);
-  const pad = { left: 34, right: 12, top: 14, bottom: 22 };
+  const pad = { left: 38, right: 12, top: 14, bottom: 22 };
   const pw = w - pad.left - pad.right, ph = h - pad.top - pad.bottom;
+  const xMap = (t) => pad.left + Math.max(0, Math.min(1, t / duration)) * pw;
+  const yMap = (v) => pad.top + ph - Math.max(0, Math.min(maxValue, v)) / maxValue * ph;
   ctx.font = "8px ui-monospace, monospace"; ctx.fillStyle = "rgba(145,166,178,.6)"; ctx.textAlign = "right";
   for (let i = 0; i <= 3; i++) {
     const y = pad.top + ph * i / 3;
     ctx.strokeStyle = "rgba(145,166,178,.10)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
     ctx.fillText(`${Math.round(maxValue * (1 - i / 3))}${suffix}`, pad.left - 6, y + 3);
   }
-  if (values.length < 2) return;
-  const t0 = values[0].t, t1 = Math.max(values[values.length - 1].t, t0 + 1);
-  const xMap = (t) => pad.left + (t - t0) / (t1 - t0) * pw;
-  const yMap = (v) => pad.top + ph - Math.max(0, Math.min(maxValue, v)) / maxValue * ph;
-  const gradient = ctx.createLinearGradient(0, pad.top, 0, pad.top + ph);
-  gradient.addColorStop(0, color.replace("1)", ".25)")); gradient.addColorStop(1, color.replace("1)", "0)"));
-  ctx.beginPath(); ctx.moveTo(xMap(values[0].t), pad.top + ph);
-  for (const point of values) ctx.lineTo(xMap(point.t), yMap(point.v));
-  ctx.lineTo(xMap(values[values.length - 1].t), pad.top + ph); ctx.closePath(); ctx.fillStyle = gradient; ctx.fill();
-  ctx.beginPath();
-  values.forEach((point, index) => index ? ctx.lineTo(xMap(point.t), yMap(point.v)) : ctx.moveTo(xMap(point.t), yMap(point.v)));
-  ctx.strokeStyle = color; ctx.lineWidth = 1.6; ctx.stroke();
-  ctx.fillStyle = "rgba(145,166,178,.55)"; ctx.textAlign = "left"; ctx.fillText(formatTime(t0, true), pad.left, h - 7);
-  ctx.textAlign = "right"; ctx.fillText(formatTime(t1, true), w - pad.right, h - 7);
+  ctx.textAlign = "left"; ctx.fillText("0", pad.left, h - 7);
+  ctx.textAlign = "right"; ctx.fillText(`${Math.round(duration / 60)} min`, w - pad.right, h - 7);
+  if (threshold !== null) {
+    ctx.strokeStyle = "rgba(255,117,111,.7)"; ctx.setLineDash([4, 4]); ctx.beginPath();
+    ctx.moveTo(pad.left, yMap(threshold)); ctx.lineTo(w - pad.right, yMap(threshold)); ctx.stroke(); ctx.setLineDash([]);
+  }
+  if (emptyText) {
+    ctx.fillStyle = "rgba(174,191,200,.7)"; ctx.textAlign = "center"; ctx.font = "10px ui-monospace, monospace";
+    ctx.fillText(emptyText, pad.left + pw / 2, pad.top + ph / 2); return;
+  }
+  for (const { points, color, step } of series) {
+    const valid = points.filter((p) => p.v !== null && p.v !== undefined);
+    if (!valid.length) continue;
+    ctx.beginPath();
+    valid.forEach((p, k) => {
+      if (step) {   // a 30-s interval value holds from the start to the end of its interval
+        const t0 = Math.max(0, p.t - step);
+        if (k === 0) ctx.moveTo(xMap(t0), yMap(p.v)); else ctx.lineTo(xMap(t0), yMap(p.v));
+        ctx.lineTo(xMap(p.t), yMap(p.v));
+      } else if (k === 0) ctx.moveTo(xMap(p.t), yMap(p.v)); else ctx.lineTo(xMap(p.t), yMap(p.v));
+    });
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+  }
 }
 
-function updateHistory() {
+function updateCharts() {
   if (!state) return;
-  const last = history[history.length - 1];
-  if (last && state.time_s < last.t) history = [];
-  if (!last || state.time_s !== last.t) {
-    history.push({ t: state.time_s, speed: state.metrics.mean_speed_mps * 3.6, queue: state.queues.mainline + state.queues.ramp });
-    if (history.length > 360) history.shift();
+  const duration = state.duration_s, interval = config.simulation.detector_interval_s;
+  const d1 = state.d1.history.map((r) => ({ t: r.t, v: r.speed_kmh }));
+  drawChart(els.speedChart, [{ points: d1, color: "rgba(84,214,218,1)", step: interval }], { maxValue: 120, duration, threshold: 40 });
+  if (state.tmc.metered) {
+    // the rate chosen at time t applies until the next update, 30 s later
+    const rate = state.tmc.history.map((r) => ({ t: r.t + interval, v: r.rate }));
+    drawChart(els.meterChart, [{ points: rate, color: "rgba(240,183,99,1)", step: interval }], { maxValue: 1000, duration });
+  } else {
+    drawChart(els.meterChart, [], { maxValue: 1000, duration, emptyText: "no meter: ramp vehicles merge whenever the gap allows" });
   }
-  const speedValues = history.map((d) => ({ t: d.t, v: d.speed }));
-  const queueValues = history.map((d) => ({ t: d.t, v: d.queue }));
-  const queueMax = Math.max(10, ...queueValues.map((d) => d.v)) * 1.15;
-  drawChart(els.speedChart, speedValues, "rgba(84,214,218,1)", 120, "");
-  drawChart(els.queueChart, queueValues, "rgba(158,140,255,1)", queueMax, "");
+  const main = state.samples.map((d) => ({ t: d.t, v: d.mainline })), ramp = state.samples.map((d) => ({ t: d.t, v: d.ramp }));
+  const qMax = Math.ceil(Math.max(10, ...state.samples.map((d) => Math.max(d.mainline, d.ramp))) * 1.15 / 10) * 10;
+  drawChart(els.queueChart, [{ points: main, color: "rgba(84,214,218,1)" }, { points: ramp, color: "rgba(158,140,255,1)" }], { maxValue: qMax, duration });
 }
 
 function updateInspector() {
@@ -383,19 +395,39 @@ function renderDetectors() {
   }));
 }
 
-function renderScenarioDetails() {
-  const scenario = scenarios.get(state.scenario_id);
-  if (!scenario) return;
-  const demand = scenario.mainline_demand_vph + scenario.ramp_demand_vph;
-  const rows = [
-    ["Desired time gap T", `${scenario.desired_time_gap_s.toFixed(1)} s`], ["Capacity", `${scenario.capacity_vph} veh/h`],
-    ["Mainline demand", `${scenario.mainline_demand_vph} veh/h`], ["Ramp demand", `${scenario.ramp_demand_vph} veh/h`],
-    ["CAV share", `${Math.round(100 * scenario.penetration)}%`],
-    ["Demand / capacity", `${Math.round(100 * demand / scenario.capacity_vph)}%`], ["Seed", "281"],
-  ];
-  $("scenarioDetails").replaceChildren(...rows.map(([term, value]) => {
+function rows(container, items) {
+  container.replaceChildren(...items.map(([term, value]) => {
     const div = document.createElement("div"); div.innerHTML = `<dt>${term}</dt><dd>${value}</dd>`; return div;
   }));
+}
+
+function renderScenarioDetails() {
+  const c = state.case;
+  rows($("scenarioDetails"), [
+    ["Run", `Run ${c.run}`], ["Human time gap T", `${c.T.toFixed(1)} s`], ["CAV share", `${Math.round(100 * c.penetration)}%`],
+    ["Capacity (with this CAV share)", `${c.capacity_vph.toLocaleString()} veh/h`],
+    ["Demand", `${c.mainline_vph.toLocaleString()} + ${c.ramp_vph} veh/h`], ["Demand / capacity", `${c.demand_pct}%`],
+    ["Ramp meter", c.meter_label], ["Seed", String(c.seed)],
+  ]);
+}
+
+function renderSystems() {
+  const d1 = state.d1, tmc = state.tmc, c = state.case;
+  $("congestionRow").classList.toggle("congested", d1.congested);
+  $("congestionStatus").textContent = d1.congested ? `CONGESTED since ${formatTime(d1.since_s, true)}` : "not congested";
+  $("slowCount").textContent = `${Math.min(d1.slow_in_a_row, 4)} / 4 slow`;
+  $("meterMode").textContent = `Ramp meter: ${c.meter_label}`;
+  $("meterRate").textContent = tmc.metered ? `${Math.round(tmc.rate_vph)} veh/h` : "off";
+  $("rampQueue").textContent = `ramp queue ${state.queues.ramp} / ${config.ramp_meter.storage_vehicles}`;
+  const items = [];
+  if (c.meter_mode === "alinea") {
+    const occ = tmc.last && tmc.last.occ !== null ? `${fmt(tmc.last.occ, 1)}%` : tmc.d2_lost ? "lost" : "—";
+    items.push(["Update", "every 30 s: r = r + 70 × (target − D2 occupancy)"], ["Target occupancy", `${c.target_pct}%`],
+               ["D2 occupancy (last 30 s)", occ], ["Last decision", tmc.last ? tmc.last.reason : "—"]);
+  } else if (c.meter_mode === "fixed") {
+    items.push(["Rate", `fixed ${c.fixed_rate_vph} veh/h`]);
+  }
+  $("tmcDetail").innerHTML = items.map(([a, b]) => `<div><span>${a}</span><strong>${b}</strong></div>`).join("");
 }
 
 function renderState(nextState) {
@@ -411,10 +443,16 @@ function renderState(nextState) {
   $("throughput").textContent = Math.round(metrics.throughput_veh_h).toLocaleString(); $("exitedCount").textContent = `${metrics.exited_vehicles} vehicles exited`;
   $("delay").textContent = fmt(metrics.total_delay_veh_h, 2); $("queueCount").textContent = `Boundary queue: ${state.queues.mainline + state.queues.ramp} vehicles`;
   $("minGap").textContent = fmt(metrics.minimum_gap_m, 1); $("brakeCount").textContent = `hardest braking ${fmt(metrics.hardest_braking_mps2, 1)} m/s²`;
-  $("meterRate").textContent = `${Math.round(metrics.meter_rate_vph)} veh/h`; $("rampQueue").textContent = `queue ${state.queues.ramp}`;
-  $("chartSpeedNow").textContent = `${fmt(metrics.mean_speed_mps * 3.6, 1)} km/h`; $("chartQueueNow").textContent = `${state.queues.mainline + state.queues.ramp} veh`;
-  els.scenario.value = state.scenario_id;
-  renderScenarioDetails(); renderDetectors(); updateInspector(); drawRoad(); updateHistory();
+  const lastD1 = state.d1.history[state.d1.history.length - 1];
+  $("chartSpeedNow").textContent = lastD1 && lastD1.speed_kmh !== null ? `${fmt(lastD1.speed_kmh, 0)} km/h` : "—";
+  $("chartMeterNow").textContent = state.tmc.metered ? `${Math.round(state.tmc.rate_vph)} veh/h` : "off";
+  const lastSample = state.samples[state.samples.length - 1];
+  $("chartQueueNow").textContent = lastSample ? `${lastSample.mainline} + ${lastSample.ramp} veh` : "0 veh";
+  const sc = state.session.case;
+  for (const [el, value] of [[els.run, sc.run], [els.cav, sc.penetration], [els.meter, sc.meter], [els.seed, sc.seed]]) {
+    if (document.activeElement !== el) el.value = String(value);
+  }
+  renderScenarioDetails(); renderSystems(); renderDetectors(); updateInspector(); drawRoad(); updateCharts();
 }
 
 async function sendControl(action, extra = {}) {
@@ -491,12 +529,17 @@ els.panRight.addEventListener("click", () => panCamera(1));
 els.centerMerge.addEventListener("click", centerCameraOnMerge);
 
 els.play.addEventListener("click", () => sendControl(state?.session.playing ? "pause" : "play"));
-els.reset.addEventListener("click", () => { history = []; selectedVehicleId = null; sendControl("reset", { scenario_id: els.scenario.value }); });
+function chosenCase() {
+  return { run: Number(els.run.value), penetration: Number(els.cav.value), meter: els.meter.value, seed: Number(els.seed.value) };
+}
+els.reset.addEventListener("click", () => { selectedVehicleId = null; sendControl("reset", { case: chosenCase() }); });
 els.step.addEventListener("click", () => sendControl("step"));
 els.speed.addEventListener("change", () => sendControl("speed", { value: Number(els.speed.value) }));
-els.scenario.addEventListener("change", () => { history = []; selectedVehicleId = null; sendControl("reset", { scenario_id: els.scenario.value }); });
+for (const el of [els.run, els.cav, els.meter, els.seed]) {
+  el.addEventListener("change", () => { selectedVehicleId = null; sendControl("reset", { case: chosenCase() }); el.blur(); });
+}
 els.timeline.addEventListener("input", () => { timelineDragging = true; els.timelineCurrent.textContent = formatTime(Number(els.timeline.value)); });
-els.timeline.addEventListener("change", async () => { timelineDragging = false; history = []; await sendControl("seek", { time_s: Number(els.timeline.value) }); notify(`Jumped to ${formatTime(Number(els.timeline.value))}`); });
+els.timeline.addEventListener("change", async () => { timelineDragging = false; await sendControl("seek", { time_s: Number(els.timeline.value) }); notify(`Jumped to ${formatTime(Number(els.timeline.value))}`); });
 els.live.addEventListener("click", () => sendControl("play"));
 
 els.record.addEventListener("click", () => {
@@ -527,15 +570,17 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "ArrowRight") els.step.click();
 });
 
-new ResizeObserver(() => { drawRoad(); updateHistory(); }).observe(document.querySelector(".workspace"));
+new ResizeObserver(() => { drawRoad(); updateCharts(); }).observe(document.querySelector(".workspace"));
 
 async function initialize() {
   try {
     config = await api("/api/config");
-    scenarios = new Map(config.scenarios.map((scenario) => [scenario.scenario_id, scenario]));
-    for (const scenario of config.scenarios) {
-      const option = document.createElement("option"); option.value = scenario.scenario_id; option.textContent = scenario.label; els.scenario.appendChild(option);
-    }
+    const add = (select, value, text) => { const o = document.createElement("option"); o.value = String(value); o.textContent = text; select.appendChild(o); };
+    const o = config.options;
+    for (const r of o.runs) add(els.run, r.id, `Run ${r.id}: T = ${r.T} s, ramp ${r.ramp} veh/h`);
+    for (const p of o.cav_shares) add(els.cav, p, `${Math.round(100 * p)}%`);
+    for (const m of o.meters) add(els.meter, m.id, m.label);
+    for (const seed of o.seeds) add(els.seed, seed, String(seed));
     setConnected(true); await poll(); setInterval(poll, 100);
   } catch (error) {
     setConnected(false); notify(`Cannot connect to the local simulation engine: ${error.message}`);

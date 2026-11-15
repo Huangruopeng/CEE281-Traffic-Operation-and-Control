@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1118">
-  <title>CAV Flow Lab · Live Traffic Simulation</title>
+  <title>On-Ramp Merge Simulation · CEE C281 Group 8</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,8 +13,8 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><span></span><span></span></div>
         <div>
-          <div class="eyebrow">CEE 281 · PATHWAY A</div>
-          <h1>CAV Flow Lab</h1>
+          <div class="eyebrow">CEE C281 · GROUP 8</div>
+          <h1>On-ramp merge simulation</h1>
         </div>
       </div>
       <div class="topbar-meta">
@@ -25,9 +25,21 @@
 
     <main>
       <section class="control-strip" aria-label="Simulation controls">
+        <label class="scenario-field run-field">
+          <span>RUN (TIME GAP × RAMP DEMAND)</span>
+          <select id="runSelect" aria-label="Run"></select>
+        </label>
         <label class="scenario-field">
-          <span>SCENARIO</span>
-          <select id="scenarioSelect" aria-label="Select simulation scenario"></select>
+          <span>CAV SHARE</span>
+          <select id="cavSelect" aria-label="CAV share"></select>
+        </label>
+        <label class="scenario-field meter-field">
+          <span>RAMP METER (TMC)</span>
+          <select id="meterSelect" aria-label="Ramp meter"></select>
+        </label>
+        <label class="scenario-field">
+          <span>SEED</span>
+          <select id="seedSelect" aria-label="Random seed"></select>
         </label>
         <div class="transport" role="group" aria-label="Playback controls">
           <button id="resetBtn" class="icon-btn" title="Reset (R)" aria-label="Reset">↺</button>
@@ -107,12 +119,16 @@
 
           <section class="chart-grid">
             <article class="chart-card panel">
-              <div class="chart-head"><span>NETWORK SPEED</span><b id="chartSpeedNow">— km/h</b></div>
-              <canvas id="speedChart" aria-label="Network mean speed history"></canvas>
+              <div class="chart-head"><span>D1 30-S SPEED · DASHED = 40 KM/H</span><b id="chartSpeedNow">— km/h</b></div>
+              <canvas id="speedChart" aria-label="Detector D1 30-second mean speed"></canvas>
             </article>
             <article class="chart-card panel">
-              <div class="chart-head"><span>BOUNDARY QUEUES</span><b id="chartQueueNow">0 veh</b></div>
-              <canvas id="queueChart" aria-label="Boundary queue history"></canvas>
+              <div class="chart-head"><span>RAMP METER RATE</span><b id="chartMeterNow">—</b></div>
+              <canvas id="meterChart" aria-label="Ramp meter release rate"></canvas>
+            </article>
+            <article class="chart-card panel">
+              <div class="chart-head"><span>WAITING: <i class="key main"></i>MAINLINE <i class="key ramp"></i>RAMP</span><b id="chartQueueNow">0 veh</b></div>
+              <canvas id="queueChart" aria-label="Vehicles waiting on the mainline and on the ramp"></canvas>
             </article>
           </section>
         </div>
@@ -143,11 +159,17 @@
             <div class="panel-head compact">
               <div><span class="section-index">03 / SYSTEMS</span><h2>Infrastructure</h2></div>
             </div>
+            <div class="system-row congestion-system" id="congestionRow">
+              <div class="system-icon">D1</div>
+              <div><span>Congestion at D1 (below 40 km/h, 4 intervals in a row)</span><b id="congestionStatus">—</b></div>
+              <em id="slowCount">0 / 4</em>
+            </div>
             <div class="system-row meter-system">
-              <div class="system-icon">R1</div>
-              <div><span>Ramp-meter rate</span><b id="meterRate">— veh/h</b></div>
+              <div class="system-icon">TMC</div>
+              <div><span id="meterMode">Ramp meter</span><b id="meterRate">— veh/h</b></div>
               <em id="rampQueue">queue 0</em>
             </div>
+            <div class="tmc-detail" id="tmcDetail"></div>
             <div id="detectorList" class="detector-list"></div>
           </article>
 

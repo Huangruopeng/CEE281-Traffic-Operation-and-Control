@@ -53,7 +53,10 @@ From this folder (each step takes seconds on a many-core machine and a few minut
 python run_live.py --port 8781
 ```
 
-Then open <http://127.0.0.1:8781>. The drop-down lists the six human runs and Run 4 with 50% and 100% CAVs.
+Then open <http://127.0.0.1:8781>. Choose any run (Runs 1-6: time gap x ramp demand), CAV share (0-100%), ramp meter
+(none, fixed 600/900 veh/h, ALINEA 17/15/13%, ALINEA 13% with D2 lost at 5 min) and seed (281-300). The side panel shows
+the D1 congestion rule and what the TMC observes and decides every 30 s; the charts show D1's 30-s speed, the meter
+rate and the vehicles waiting on the mainline and on the ramp.
 The live view runs the same `FreewaySimulation.step()` as the batch runs.
 
 ## Files
