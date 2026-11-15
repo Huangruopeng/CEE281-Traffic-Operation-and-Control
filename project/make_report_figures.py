@@ -74,8 +74,9 @@ def cav_sweep_figure() -> None:
     for ax, letter in zip(axes, "abc"):
         ax.set(xlabel="CAV share p [%]", xlim=(-3, 103))
         ax.set_title(f"({letter})", loc="left", fontsize=9)
-    axes[0].legend(fontsize=7, frameon=False, loc="lower left")
-    fig.tight_layout(); fig.savefig(OUT / "cav_sweep_results.png"); plt.close(fig)
+    # one legend above the panels, so it covers no curve
+    fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", ncol=2, fontsize=8, frameon=False)
+    fig.tight_layout(rect=(0, 0, 1, 0.92)); fig.savefig(OUT / "cav_sweep_results.png"); plt.close(fig)
 
 
 def cav_time_space_figure() -> None:
