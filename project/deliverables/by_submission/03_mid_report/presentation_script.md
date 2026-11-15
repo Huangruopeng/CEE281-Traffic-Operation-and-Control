@@ -3,7 +3,7 @@
 Deck: https://claude.ai/artifact/Y5WnGvAuMQDzxTKs1rzTb4 (the same text is in each slide's speaker notes).
 The slides follow the mid-report: 1 introduction (slides 2-3), 2 model (4-7), 3 results (8-11), 4-5 open problems
 and next tests (12). Slides 1-12 are the talk (about 7 min: Seunghun about 3:20, Ruopeng about
-2:40 plus a 1-min live demo); slides 13-21 are backup for questions.
+2:45 plus a 1-min live demo); slides 13-21 are backup for questions.
 
 Live demo: `python run_live.py --port 8781`, open http://127.0.0.1:8781. Run 4, no meter, jump to 7 min (D1 congested
 since 6:30, about 100 cars waiting); then ramp meter ALINEA 13% and jump again (no congestion, about 27 cars wait on the ramp).
@@ -17,7 +17,7 @@ since 6:30, about 100 cars waiting); then ramp meter ALINEA 13% and jump again (
 | 5 | With CAVs the lane carries more, slowly at first | Seunghun | 0:25 |
 | 6 | Merge rule: two modes, split at 40 km/h | Seunghun | 0:40 |
 | 7 | Basic TMC: a ramp meter with ALINEA | Ruopeng | 0:30 |
-| 8 | Human drivers: congested above capacity, sometimes below | Ruopeng | 0:30 |
+| 8 | Human drivers: congested above capacity, sometimes below | Ruopeng | 0:35 |
 | 9 | CAVs cut congestion from about half the vehicles on | Seunghun | 0:40 |
 | 10 | Even 100% CAVs can break down after a burst of arrivals | Seunghun | 0:25 |
 | 11 | Metering helps above capacity, if the target is low enough | Ruopeng | 0:30 + 1:00 demo |
@@ -56,10 +56,10 @@ since 6:30, about 100 cars waiting); then ramp meter ALINEA 13% and jump again (
 > The other way to prevent a jam is a traffic management center, or TMC. Ours runs a ramp meter, a signal at the end of the ramp. Every 30 seconds it reads the occupancy at D2, after the merge. If D2 is busier than the target, ALINEA lets fewer ramp cars go; if not, more. The target, 17 percent, is the occupancy at capacity of our road; we also tried lower targets. If the detector data are lost, it falls back to a fixed rate. We compare it with no meter and with fixed rates.
 
 **8. Human drivers: congested above capacity, sometimes below (Ruopeng)**
-> Before adding CAVs, we checked when the merge becomes congested with human drivers alone, in six cases: three time gaps, each with a low and a high ramp demand. Each panel shows every vehicle over time; red means slow. Runs 4 and 6, above capacity, are congested almost every time. Run 2 is below capacity, at 88 percent, but still becomes congested in 15 percent of runs. Once congested, the merge passes only about 1,500 vehicles per hour, because every zipper vehicle stops completely.
+> Before adding CAVs, we checked how the merge behaves with human drivers alone: does it become congested only when demand exceeds capacity? We ran six cases: three time gaps, each with a low and a high ramp demand. Each panel shows every vehicle over time; red means slow. Runs 4 and 6, above capacity, are congested almost every time. Run 2 is below capacity, at 88 percent, but still becomes congested in 15 percent of runs. Once congested, the merge passes only about 1,500 vehicles per hour, because every zipper vehicle stops completely. So at the demand of our question, Run 4, human drivers congest the merge in 95 percent of runs. That is our starting point: how many CAVs does it take to prevent this?
 
 **9. CAVs cut congestion from about half the vehicles on (Seunghun)**
-> Before running, we predicted congestion in nearly every run up to 30 percent CAVs, almost none from 80 percent, and as many stops as before. Panel a: congestion stays in most runs up to 40 percent CAVs, then drops: 30 percent of runs at half CAVs, 5 percent at all CAVs. Panel b: the vehicles still waiting at 10 minutes fall from about 100 to 8. So the timing matched. But congestion never disappears completely, and in panel c, when a queue does form with many CAVs, vehicles stop more often, 6 to 8 times instead of 4.
+> We start from 95 percent congested runs without CAVs. Before running, we predicted congestion in nearly every run up to 30 percent CAVs, almost none from 80 percent, and as many stops as before. Panel a: congestion stays in most runs up to 40 percent CAVs, then drops: 30 percent of runs at half CAVs, 5 percent at all CAVs. Panel b: the vehicles still waiting at 10 minutes fall from about 100 to 8. So the timing matched. But congestion never disappears completely, and in panel c, when a queue does form with many CAVs, vehicles stop more often, 6 to 8 times instead of 4.
 
 **10. Even 100% CAVs can break down after a burst of arrivals (Seunghun)**
 > Here are single runs. Without CAVs a queue grows back from the merge; with half or all CAVs it disappears. But on the right, even with 100 percent CAVs, seed 284 breaks down. In that run 24 ramp vehicles arrive in one minute, twice the mean. Once the zipper starts, the merge passes about 1,500 vehicles per hour no matter how many CAVs there are, because the zipper vehicles stop completely.
