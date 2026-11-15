@@ -37,12 +37,12 @@ From this folder (each step takes seconds on a many-core machine and a few minut
 
 | Report item | Source |
 |---|---|
-| Fig. 1 (road), Fig. 4 (merge rule) | drawings of the model, no simulation output |
+| Fig. 1 (road), Fig. 3 (merge rule) | drawings of the model, no simulation output |
 | Fig. 2 (capacity vs. CAV share) | `make_report_figures.py` -> `capacity_vs_cav_share.png` (Eq. 2, no runs needed) |
-| Fig. 3 (detector D1) | `make_report_figures.py` -> `detector_d1.png` |
+| Fig. 4 (detector D1) | `make_report_figures.py` -> `detector_d1.png` |
 | Fig. 5 (Runs 1-6) | `run_time_gap_sweep.py`, then `make_report_figures.py` -> `six_runs_human.png` |
-| Fig. 6 (CAV sweep), Fig. 7 (CAV runs) | `run_cav_sweep.py`, then `make_report_figures.py` -> `cav_sweep_results.png`, `time_space_cav.png` |
-| Fig. 8 (ramp metering), Fig. 9 (one TMC run) | `run_tmc.py`, then `make_report_figures.py` -> `tmc_results.png`, `tmc_trace.png` |
+| Fig. 6 (CAV share), Fig. 7 (CAV runs) | `run_cav_sweep.py`, then `make_report_figures.py` -> `cav_sweep_results.png`, `time_space_cav.png` |
+| Fig. 8 (ramp metering) | `run_tmc.py`, then `make_report_figures.py` -> `tmc_results.png` |
 | Table 1 (parameters) | `configs/scenarios.json` |
 | Table 2 (verification) | `run_checks.py` -> `outputs/checks/checks.csv` |
 | Numbers in Sections 3.2-3.4 | `outputs/time_gap_sweep/`, `outputs/cav_sweep/`, `outputs/tmc/` (`seed_means.csv`) |
