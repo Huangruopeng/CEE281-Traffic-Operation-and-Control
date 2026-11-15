@@ -81,3 +81,39 @@ Against the predictions:
    Likely cause: the IDM becomes less stable as T shrinks, and our CAV model has no acceleration feedforward,
    which real CACC uses to stay string stable.
 4. Held.
+
+## 4. Basic TMC: ramp metering (2026-11-15, `run_tmc.py`, Run 4 demand, 20 seeds)
+
+Settings: ALINEA r(k) = r(k-1) + K_R (target - o_D2(k)) every 30 s, K_R = 70 veh/h per % (Papageorgiou et al.
+1991), rate bounds 240-900 veh/h (FHWA ATDM guide defaults), target 17% = occupancy at capacity of the human
+IDM (k_c = 34.9 veh/km x 5 m = 17.4%); queue override to 900 veh/h when the ramp queue reaches 25 of 35; fallback
+to the fixed rate when D2 data are missing. Fixed baselines: 600 veh/h (capacity 2,519 - mainline 1,900 = 619)
+and 900 veh/h.
+
+**Unfair first version found and fixed.** In the first runs a ramp vehicle rejected at a metered ramp waited 1 s
+before checking again, while without a meter it checks every 0.1 s. With that rule, fixed meters at 900, 1,800 and
+3,600 veh/h all gave 5% congested runs (vs. 95% without a meter), identical to each other: the benefit came from
+the 1-s re-check, not from metering. Fixed: a rejected vehicle now checks again at the next step in every mode.
+This also shows that **our breakdowns depend strongly on how often a waiting ramp driver re-checks the gap**
+(a challenge for Section 4 of the report).
+
+Results after the fix (mean over 20 seeds; delay includes waiting at the boundary and in the ramp queue):
+
+| Controller | Congested, no CAVs | Delay [veh h], no CAVs | Ramp queue max | Not served | Congested, 50% CAVs | Delay, 50% CAVs |
+|---|---|---|---|---|---|---|
+| no meter | 95% | 10.3 +- 2.5 | 7.5 | 0 | 30% | 4.4 +- 2.7 |
+| fixed 600 veh/h | 30% | 7.1 +- 2.4 | 29.1 | 2.1 | 0% | 4.9 +- 0.5 |
+| fixed 900 veh/h | 90% | 9.0 +- 2.5 | 9.6 | 0 | 15% | 4.5 +- 2.4 |
+| ALINEA 17% | 85% | 9.1 +- 2.5 | 9.6 | 0 | 15% | 4.4 +- 2.3 |
+| ALINEA 15% | 60% | 8.1 +- 2.7 | 16.8 | 0 | 10% | 4.1 +- 2.0 |
+| ALINEA 13% | 30% | 8.0 +- 2.9 | 26.2 | 0 | 5% | 4.4 +- 1.7 |
+| ALINEA 13%, D2 lost at 5 min | 35% | 8.9 +- 3.8 | 27.0 | 2.5 | - | - |
+
+- Metering helps when demand exceeds capacity: congestion 95% -> 30% and delay 10.3 -> 7-8 veh h, by holding ramp
+  vehicles on the ramp.
+- ALINEA with the target at the critical occupancy (17%) hardly acts: D2 stays near 15-17% before the breakdown.
+  A target below critical (13%) cuts congestion to 30% without unserved vehicles; the fixed 600 veh/h meter does the
+  same but leaves about 2 ramp vehicles per run unserved (ramp storage full).
+- Fallback works: with D2 lost the meter switches to 600 veh/h; results stay close to ALINEA 13%.
+- With 50% CAVs all controllers give similar delay (4.1-4.9 veh h); metering lowers the congested share (30% -> 0-15%).
+- Note: the 15% and 13% targets were chosen on these same runs (no separate tuning data).

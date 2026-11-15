@@ -5,7 +5,8 @@ CEE C181/C281 design project, Fall 2026 (CAV pathway). Seunghun Oh and Ruopeng H
 A one-lane, 2.5 km freeway with one on-ramp merge at 1.6 km, the only bottleneck. Mainline and ramp vehicles
 arrive at random (Poisson) for 10 minutes; each run lasts 15 minutes. Every driver follows the Intelligent
 Driver Model (IDM, Treiber and Kesting Table 11.2). Ramp vehicles merge with a MOBIL-type safety check, or by
-zipper (taking turns) when traffic is slower than 40 km/h. A connected and automated vehicle (CAV) uses the
+zipper (taking turns) when traffic is slower than 40 km/h. A ramp meter (fixed rate or ALINEA occupancy
+feedback, the basic TMC) can control ramp releases; it is off unless stated. A connected and automated vehicle (CAV) uses the
 same IDM but a 0.6 s time gap when the vehicle ahead is also a CAV (cooperative adaptive cruise control); behind
 a human driver it keeps the human time gap. Detectors D1 (1,450 m) and D2 (2,050 m) report 30-s counts, mean
 speeds and occupancies. **The merge is congested when D1's 30-s mean speed is below 11.1 m/s (40 km/h) for at
@@ -27,7 +28,8 @@ From this folder (each step takes seconds on a many-core machine and a few minut
 | `python run_checks.py` | `outputs/checks/checks.csv`: no queue without ramp traffic, detector recount, time-step sensitivity |
 | `python run_time_gap_sweep.py` | `outputs/time_gap_sweep/`: human drivers, time gap T = 0.8/1.0/1.2 s x ramp 200/700 veh/h, 20 seeds |
 | `python run_cav_sweep.py` | `outputs/cav_sweep/`: CAV share 0-100% at ramp 700 veh/h, human T = 1.0 and 1.2 s, 20 seeds |
-| `python make_report_figures.py` | `outputs/figures/`: the figures of the mid-report (run the two sweeps first) |
+| `python run_tmc.py` | `outputs/tmc/`: ramp metering (no meter, fixed 600/900 veh/h, ALINEA 17/15/13%), detector-loss fallback, 0% and 50% CAVs, 20 seeds |
+| `python make_report_figures.py` | `outputs/figures/`: the figures of the mid-report (run the three sweeps first) |
 
 `all_seeds.csv` has one row per run; `seed_means.csv` has means over seeds with 95% confidence intervals.
 

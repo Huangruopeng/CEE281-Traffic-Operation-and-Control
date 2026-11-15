@@ -23,7 +23,8 @@ def load_config() -> dict:
 
 
 def run_case(config: dict, *, T: float | None = None, ramp: float | None = None, penetration: float | None = None,
-             seed: int | None = None, meter_mode: str | None = None, dt: float | None = None) -> tuple[dict, dict, dict]:
+             seed: int | None = None, meter_mode: str | None = None, detector_failure_s: float | None = None,
+             dt: float | None = None) -> tuple[dict, dict, dict]:
     """One simulation of the base scenario with the given changes. Returns (metric, tables, config used)."""
     cfg = copy.deepcopy(config)
     scenario = cfg["base_scenario"]
@@ -37,6 +38,8 @@ def run_case(config: dict, *, T: float | None = None, ramp: float | None = None,
         cfg["simulation"]["seed"] = seed
     if meter_mode is not None:
         scenario["meter_mode"] = meter_mode
+    if detector_failure_s is not None:
+        scenario["detector_failure_from_s"] = detector_failure_s
     if dt is not None:
         cfg["simulation"]["dt_s"] = dt
     sim = FreewaySimulation(cfg["simulation"], cfg["human_idm"], cfg["cav"], cfg["ramp_meter"], scenario)
@@ -163,7 +166,8 @@ def summarize(cfg: dict, metric: dict, tables: dict) -> dict:
         "max_ramp_queue_veh": int(queues.ramp_queue_veh.max()), "ramp_overflow_veh": metric["ramp_overflow_vehicles"],
         "merge_discharge_vph": float(d2["count"].mean() * 3600 / s["detector_interval_s"]) if len(d2) else float("nan"),
         "stops_per_queued_vehicle": stops, "wave_speed_kmh": wave,
-        "total_delay_veh_h": metric["total_delay_veh_h"], "unfinished_veh": metric["unfinished_vehicles"],
+        "total_delay_veh_h": metric["total_delay_veh_h"], "boundary_delay_veh_h": metric["boundary_delay_veh_h"],
+        "unfinished_veh": metric["unfinished_vehicles"],
         "conservation_ok": metric["generated_vehicles"] == metric["exited_vehicles"] + metric["unfinished_vehicles"],
         "overlap_steps": metric["overlap_steps"], "minimum_gap_m": metric["minimum_gap_m"],
         "hardest_braking_mps2": metric["hardest_braking_mps2"],

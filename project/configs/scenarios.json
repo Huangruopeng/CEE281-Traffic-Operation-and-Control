@@ -32,12 +32,12 @@
   },
   "ramp_meter": {
     "mode": "unmetered",
-    "fixed_rate_vph": 480.0,
-    "initial_rate_vph": 540.0,
+    "fixed_rate_vph": 600.0,
+    "initial_rate_vph": 600.0,
     "minimum_rate_vph": 240.0,
     "maximum_rate_vph": 900.0,
-    "target_occupancy_pct": 11.0,
-    "alinea_gain_vph_per_pct": 55.0,
+    "target_occupancy_pct": 17.0,
+    "alinea_gain_vph_per_pct": 70.0,
     "queue_override_vehicles": 25,
     "storage_vehicles": 35
   },

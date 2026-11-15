@@ -102,8 +102,8 @@ class RampMeter:
                 self.rate_vph = float(self.cfg["maximum_rate_vph"])
                 reason = "ramp storage override"
         self.rate_vph = float(np.clip(self.rate_vph, self.cfg["minimum_rate_vph"], self.cfg["maximum_rate_vph"]))
-        return {"time_s": round(time_s, 3), "rate_vph": self.rate_vph, "reason": reason,
-                "ramp_queue_veh": int(queue_estimate)}
+        return {"time_s": round(time_s, 3), "observed_occupancy_pct": observation.get("occupancy_pct") if observation else None,
+                "rate_vph": self.rate_vph, "reason": reason, "ramp_queue_veh": int(queue_estimate)}
 
     def release_due(self, time_s: float) -> bool:
         if self.mode == "unmetered":
@@ -287,8 +287,9 @@ class FreewaySimulation:
                 self.vehicles.append(self._new_vehicle(x, merge_v, "ramp", arrival))
                 self.zipper_ramp_turn = False
             else:
-                # Failed gap acceptance does not consume the scheduled release opportunity.
-                self.meter.next_release_s = self.time_s + min(1.0, 3600.0 / max(self.meter.rate_vph, 1.0))
+                # Failed gap acceptance does not consume the release: the vehicle checks again at the next step,
+                # as without a meter, so that metered and unmetered runs use the same gap acceptance.
+                self.meter.next_release_s = self.time_s
 
     def _zipper_leader(self, vehicle: Vehicle, leader: Vehicle | None) -> Vehicle | None:
         """Zipper merge in slow traffic. If a ramp vehicle is waiting, it is the ramp's turn, and the first
@@ -374,6 +375,9 @@ class FreewaySimulation:
 
     def _update_meter(self) -> None:
         downstream = self.latest_detector_record.get("D2")   # ALINEA uses the occupancy downstream of the merge
+        failure_s = self.scenario.get("detector_failure_from_s")
+        if failure_s is not None and self.time_s >= failure_s:
+            downstream = None                                # degraded-information test: D2 data are lost
         row = self.meter.update(self.time_s, downstream, len(self.ramp_queue))
         if row is not None:
             self.meter_rows.append(row)
@@ -490,6 +494,7 @@ class FreewaySimulation:
             "unfinished_vehicles": unfinished,
             "ramp_overflow_vehicles": self.ramp_overflow,
             "total_delay_veh_h": (self.total_vehicle_delay_s + self.total_boundary_delay_s) / 3600.0,
+            "boundary_delay_veh_h": self.total_boundary_delay_s / 3600.0,   # waiting at the entry and in the ramp queue
             "minimum_gap_m": self.global_min_gap_m,
             "overlap_steps": self.overlap_steps,
             "hardest_braking_mps2": self.hardest_braking_mps2,

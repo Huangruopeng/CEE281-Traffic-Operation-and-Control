@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Figures of the mid-report. Run run_time_gap_sweep.py and run_cav_sweep.py first.
+"""Figures of the mid-report. Run run_time_gap_sweep.py, run_cav_sweep.py and run_tmc.py first.
 Usage (from this folder):  python make_report_figures.py
 Writes outputs/figures/*.png.
 """
 
 from __future__ import annotations
 
+import copy
 import sys
 
 import matplotlib
@@ -148,6 +149,72 @@ def waves_figure() -> None:
     fig.tight_layout(); fig.savefig(OUT / "waves_run4.png"); plt.close(fig)
 
 
+def tmc_results_figure() -> None:
+    m = pd.read_csv(ROOT / "outputs" / "tmc" / "seed_means.csv")
+    order = ["no meter", "fixed 600 veh/h", "fixed 900 veh/h", "ALINEA 17%", "ALINEA 15%", "ALINEA 13%",
+             "ALINEA 13%, D2 lost at 5 min"]
+    names = ["no\nmeter", "fixed\n600", "fixed\n900", "ALINEA\n17%", "ALINEA\n15%", "ALINEA\n13%", "13%,\nD2 lost"]
+    names = [n.replace("ALINEA\n", "A ") for n in names]
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.6))
+    for k, (p, color, label) in enumerate(((0.0, BLUE, "no CAVs"), (0.5, ORANGE, "50% CAVs"))):
+        g = m[m.penetration == p].set_index("controller").reindex(order).dropna(subset=["congested_share"])
+        x = np.array([order.index(c) for c in g.index]) + (k - 0.5) * 0.18
+        axes[0].errorbar(x, 100 * g.congested_share, yerr=[100 * (g.congested_share - g.congested_share_low).clip(lower=0),
+                         100 * (g.congested_share_high - g.congested_share)], fmt="o", color=color, ms=4, capsize=2,
+                         elinewidth=0.8, label=label)
+        axes[1].errorbar(x, g.total_delay_veh_h, yerr=g.total_delay_veh_h_ci, fmt="o", color=color, ms=4, capsize=2,
+                         elinewidth=0.8, label=label)
+        for xi, (_, r) in zip(x, g.iterrows()):
+            if r.ramp_overflow_veh >= 0.5:
+                axes[1].text(xi, r.total_delay_veh_h + r.total_delay_veh_h_ci + 0.4, f"{r.ramp_overflow_veh:.0f}",
+                             ha="center", fontsize=6.5, color="#222222")
+    for ax in axes:
+        ax.set_xticks(range(len(order)), names, fontsize=7)
+        ax.grid(axis="x", visible=False)
+    axes[0].set(ylabel="runs congested at D1 [%]", ylim=(-3, 103))
+    axes[1].set(ylabel="total delay [veh$\\cdot$h]", ylim=(0, 15))
+    axes[0].legend(fontsize=7, frameon=False, loc="upper right")
+    for ax, letter in zip(axes, "ab"):
+        ax.set_title(f"({letter})", loc="left", fontsize=9)
+    fig.tight_layout(); fig.savefig(OUT / "tmc_results.png"); plt.close(fig)
+
+
+def tmc_trace_figure() -> None:
+    fig, axes = plt.subplots(3, 1, figsize=(3.4, 4.2), sharex=True)
+    config = copy.deepcopy(CFG)
+    config["ramp_meter"]["target_occupancy_pct"] = 13.0
+    for failure, color, label in ((None, BLUE, "ALINEA 13%"), (300.0, ORANGE, "ALINEA 13%, D2 lost at 5 min")):
+        _, tables, cfg = run_case(config, meter_mode="alinea", detector_failure_s=failure)
+        meter, queues = tables["meter"], tables["queues"]
+        if failure is None:
+            axes[0].step(meter.time_s / 60, meter.observed_occupancy_pct, where="post", color=color, lw=1.3)
+        axes[1].step(meter.time_s / 60, meter.rate_vph, where="post", color=color, lw=1.3)
+        axes[2].plot(queues.time_s / 60, queues.ramp_queue_veh, color=color, lw=1.2, label=label)
+    axes[0].axhline(cfg["ramp_meter"]["target_occupancy_pct"], color=GRAY, ls="--", lw=1)
+    axes[0].text(14.8, cfg["ramp_meter"]["target_occupancy_pct"] + 1, "target 13%", ha="right", fontsize=7)
+    axes[2].axhline(cfg["ramp_meter"]["storage_vehicles"], color=GRAY, ls="--", lw=1)
+    axes[2].text(14.8, cfg["ramp_meter"]["storage_vehicles"] - 4.5, "storage 35", ha="right", fontsize=7)
+    axes[0].set(ylabel="D2 occupancy [%]", ylim=(0, 30))
+    axes[1].set(ylabel="release rate\n[veh/h]", ylim=(150, 1000))
+    axes[2].set(ylabel="ramp queue [veh]", xlabel="time [min]", xlim=(0, 15), ylim=(0, 40))
+    axes[2].legend(fontsize=6.5, frameon=False, loc="upper left")
+    fig.tight_layout(); fig.savefig(OUT / "tmc_trace.png"); plt.close(fig)
+
+
+def breakdown_figure() -> None:
+    """Run 2 (88% of capacity): no breakdown with seed 281, breakdown with seed 284 (used in the slides)."""
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.8), sharey=True)
+    for ax, seed in zip(axes, (281, 284)):
+        metric, tables, cfg = run_case(CFG, T=0.8, ramp=700.0, seed=seed)
+        row = summarize(cfg, metric, tables)
+        verdict = f"congested for {(row['congested_to_s'] - row['congested_from_s']) / 60:.1f} min" if row["congested"] else "not congested"
+        sc = time_space(ax, tables["trajectories"], f"seed {seed}: {verdict}")
+        ax.set_xlabel("time [min]")
+    axes[0].set_ylabel("position [km]")
+    fig.colorbar(sc, ax=axes, label="speed [km/h]", pad=0.01, fraction=0.03)
+    fig.savefig(OUT / "breakdown_run2.png", bbox_inches="tight"); plt.close(fig)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     capacity_figure()
@@ -156,6 +223,9 @@ def main() -> None:
     six_runs_figure()
     detector_figure()
     waves_figure()
+    tmc_results_figure()
+    tmc_trace_figure()
+    breakdown_figure()
     print("figures in", OUT)
 
 
